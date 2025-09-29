@@ -38,7 +38,7 @@ export class FirebaseService {
         where("year", "==", year),
         where("block", "==", block),
         where("subject", "==", subject),
-        where("title", "==", testTopic)
+        where("topic", "==", testTopic)
       );
 
       const querySnapshot = await getDocs(q);
@@ -183,7 +183,7 @@ export class FirebaseService {
         return [];
       }
             
-      return snapshot.docs.map((doc) => doc.data().title);
+      return snapshot.docs.map((doc) => doc.data().topic);
     } catch (error) {
       console.error("Error fetching topics:", error);
       return [];
@@ -207,7 +207,7 @@ export class FirebaseService {
         where("year", "==", year),
         where("block", "==", block),
         where("subject", "==", subject),
-        where("title", "==", testTopic)
+        where("topic", "==", testTopic)
       );
 
       const querySnapshot = await getDocs(q);
