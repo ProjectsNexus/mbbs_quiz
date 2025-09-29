@@ -122,7 +122,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
           </Button>
         </form>
 
-        {/* <div className="relative">
+        <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
@@ -163,7 +163,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
           <p className="mb-2">Demo Credentials:</p>
           <p>Student: student@demo.com / password</p>
           <p>Tutor: tutor@demo.com / password</p>
-        </div> */}
+        </div>
       </CardContent>
     </Card>
   )

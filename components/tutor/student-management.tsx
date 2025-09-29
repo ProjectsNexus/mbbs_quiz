@@ -18,6 +18,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTutor } from "@/hooks/use-tutor"
 import { Plus, Search, Filter, Edit, Trash2, Users, TrendingUp, Clock } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 
 export function StudentManagement() {
   const { students, addStudent, removeStudent, updateStudent, getStudentsByBatch } = useTutor()
@@ -84,71 +85,109 @@ export function StudentManagement() {
               Add Student
             </Button>
           </DialogTrigger>
+          
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Student</DialogTitle>
-              <DialogDescription>Add a new student to your class</DialogDescription>
+              <DialogDescription>Add a ne8 student to your class</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={newStudent.name}
-                  onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
-                  placeholder="Enter student's full name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newStudent.email}
-                  onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
-                  placeholder="Enter student's email"
-                />
-              </div>
-              <div>
-                <Label htmlFor="batch">Batch</Label>
-                <Select
-                  value={newStudent.batch}
-                  onValueChange={(value) => setNewStudent({ ...newStudent, batch: value, year: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select batch" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {batches.map((batch) => (
-                      <SelectItem key={batch} value={batch}>
-                        {batch}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {/* <div>
-                <Label htmlFor="year">Academic Year</Label>
-                <Select
-                  value={newStudent.year}
-                  onValueChange={(value) => setNewStudent({ ...newStudent, year: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>*/}
-              <Button onClick={handleAddStudent} className="w-full">
-                Add Student
-              </Button>
-            </div> 
+
+              <Tabs defaultValue="add" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="single">Create Single Student</TabsTrigger>
+                  <TabsTrigger value="bulk">Bulk Student Add</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="single">
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Student</DialogTitle>
+                      <DialogDescription>Add a new student to your class</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input
+                          id="name"
+                          value={newStudent.name}
+                          onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                          placeholder="Enter student's full name"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={newStudent.email}
+                          onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                          placeholder="Enter student's email"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="batch">Batch</Label>
+                        <Select
+                          value={newStudent.batch}
+                          onValueChange={(value) => setNewStudent({ ...newStudent, batch: value, year: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select batch" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {batches.map((batch) => (
+                              <SelectItem key={batch} value={batch}>
+                                {batch}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="year">Academic Year</Label>
+                        <Select
+                          value={newStudent.year}
+                          onValueChange={(value) => setNewStudent({ ...newStudent, year: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {years.map((year) => (
+                              <SelectItem key={year} value={year}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button onClick={handleAddStudent} className="w-full">
+                        Add Student
+                      </Button>
+                    </div>
+                  </DialogContent>      
+                </TabsContent>
+
+                <TabsContent value="bulk">
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Bulk Add Students</DialogTitle>
+                      <DialogDescription>
+                        Upload a CSV file with student details to add multiple students at once.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <Label htmlFor="csv">CSV File</Label>
+                        <Input id="csv" type="file" accept=".csv" />
+                      </div>
+                      <Button className="w-full">
+                        Upload and Add Students
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </TabsContent>
+
+              </Tabs>
           </DialogContent>
         </Dialog>
       </div>
