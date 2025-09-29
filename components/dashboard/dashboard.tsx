@@ -19,6 +19,7 @@ import {
   User,
   BarChart3,
 } from "lucide-react"
+import { Logo, LogoTitle } from "../ui/logo"
 
 interface DashboardProps {
   onStartQuiz: () => void
@@ -82,10 +83,11 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 p-2 rounded-lg">
-              <GraduationCap className="h-6 w-6 text-primary" />
+              {/* <GraduationCap className="h-6 w-6 text-primary" /> */}
+              <Logo size={'md'} src="/logo.png" alt="SilvRx Logo" className="h-12 w-12 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">MBBS Quiz</h1>
+              <LogoTitle className="text-3xl">SilvRx</LogoTitle>
               <p className="text-sm text-muted-foreground">Medical Education Platform</p>
             </div>
           </div>

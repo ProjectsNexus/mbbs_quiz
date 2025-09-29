@@ -14,4 +14,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 export const auth = getAuth(app)
+export const secondaryAuth = getAuth(initializeApp(firebaseConfig, "Secondary"))  // Secondary app for admin tasks
+export const secondaryDb = getFirestore(initializeApp(firebaseConfig, "Secondary"))
 export default app

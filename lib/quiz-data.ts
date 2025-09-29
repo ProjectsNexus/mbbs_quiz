@@ -12,7 +12,7 @@ export const MBBS_STRUCTURE = {
     blocks: ["D", "E", "F"],
     subjects: {
       D: [],
-      E: ["Mix", "Research", "Pharmacology", "Medicine", "PRIME", "Surgery", "Pathology", "Physiology "],
+      E: ["Minor Subjects", "Embryology", "Histology", "Anatomy", "Biochemistry", "Physiology"],
       F: [,],
     },
   },

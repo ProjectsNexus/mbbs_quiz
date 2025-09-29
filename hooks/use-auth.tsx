@@ -10,17 +10,21 @@ import {
   signOut,
   onAuthStateChanged,
   deleteUser,
+  sendSignInLinkToEmail,
 } from "firebase/auth"
 import { addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
+import { auth, db, secondaryAuth, secondaryDb } from "@/lib/firebase"
 import type { User } from "@/lib/types"
+import { TutorProvider } from "./use-tutor"
 
 interface AuthContextType {
   user: FirebaseUser | null
   userProfile: User | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name: string, role?: "student" | "tutor", createdBy?: "self" | "tutor", studentId: string, studentYear: string) => Promise<void>
+  signUp: (email: string, password: string, name: string, role?: "student" | "tutor", studentYear?: string, createdBy?: 'tutor' | 'self') => Promise<void>
+  createStudentByTutor: (email: string, password: string, name: string, studentYear: string, studentId:string) => Promise<void>
+  sendStudentInvite: (studentEmail: string, studentName: string, studentYear: string, createdBy?: "tutor" | "self") => Promise<void>
   logout: () => Promise<void>
   deleteUserAccount: (sudentID: string) => Promise<void>
   isTutor: boolean
@@ -87,93 +91,325 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
   }
 
-  const signUp = async (email: string, password: string, name: string, role: "student" | "tutor" = "student", createdBy: "self" | "tutor" = "self", studentId: string, studentYear: string) => {
+  // const signUp = async (email: string, password: string, name: string, role: "student" | "tutor" = "student", createdBy: "self" | "tutor", studentYear: string) => {
+  //   try {
+  //     console.log(` Creating account for ${email} with role ${role}`)
+  //     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+
+  //     const detectedRole =
+  //       email.includes("tutor") || email.includes("teacher") || email.includes("admin") ? "tutor" : role
+
+  //     const userProfile: User = {
+  //       id: userCredential.user.uid,
+  //       email,
+  //       name,
+  //       role: detectedRole,
+  //       year: studentYear || '',
+  //       createdAt: new Date(),
+  //       updatedAt: new Date(),
+  //     }
+
+  //     try {
+  //       await setDoc(doc(db, "users", userCredential.user.uid), userProfile)
+  //       console.log(` User profile created in Firestore for ${email}`)
+  //       setUserProfile(userProfile)
+
+  //       await setDoc(doc(db, "user_stats", userCredential.user.uid), {
+  //         totalQuizzes: 0,
+  //         averageScore: 0,
+  //         bestScore: 0,
+  //         createdAt: new Date(),
+  //         updatedAt: new Date(),
+  //       })
+  //       console.log(` User stats initialized for ${email}`)  
+  //       // Behavior based on creator
+  //        if (createdBy === "self") {
+  //          await signOut(auth)
+  //          console.log(" Student signed out after signup (no auto-login).")
+  //         } else {
+  //           console.log(" Student created by tutor, no sign-out.")
+  //         }   
+  //       } catch (firestoreError) {
+  //         console.error(" Error creating user profile in Firestore:", firestoreError)
+  //         throw new Error("Failed to create user profile. Please try again.")
+  //       }
+  //     } catch (error: any) {
+  //       console.error(" Error in signUp:", error)
+  //       throw error
+  //     }
+  //   }
+
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string,
+    role: "student" | "tutor" = "student",
+    createdBy: "self" | "tutor",
+    studentYear: string
+  ) => {
     try {
-      console.log(` Creating account for ${email} with role ${role}`)
+      console.log(`Creating account for ${email} with role ${role}`)
+
+      // Save the current logged-in tutor user
+      const currentUser = auth.currentUser
+      console.log(` Current user before signup: ${currentUser?.email || "None"}`);
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
       const detectedRole =
-        email.includes("tutor") || email.includes("teacher") || email.includes("admin") ? "tutor" : role
+        email.includes("tutor") || email.includes("teacher") || email.includes("admin")
+          ? "tutor"
+          : role
 
       const userProfile: User = {
         id: userCredential.user.uid,
         email,
         name,
         role: detectedRole,
-        year: studentYear || '',
+        year: studentYear || "",
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
-      try {
-        await setDoc(doc(db, "users", userCredential.user.uid), userProfile)
-        console.log(` User profile created in Firestore for ${email}`)
-        setUserProfile(userProfile)
+      // Create Firestore profile
+      await setDoc(doc(db, "users", userCredential.user.uid), userProfile)
+      console.log(`User profile created in Firestore for ${email}`)
 
-        await setDoc(doc(db, "user_stats", userCredential.user.uid), {
-          totalQuizzes: 0,
-          averageScore: 0,
-          bestScore: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        console.log(` User stats initialized for ${email}`)
+      await setDoc(doc(db, "user_stats", userCredential.user.uid), {
+        totalQuizzes: 0,
+        averageScore: 0,
+        bestScore: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      console.log(`User stats initialized for ${email}`)
 
-        // 🔑 Sign the user out immediately after signup
-       // Behavior based on creator
-        if (createdBy === "self") {
-          await signOut(auth)
-          console.log(" Student signed out after signup (no auto-login).")
-        } else {
-          if (!studentId) {
-            throw new Error("studentId is required when tutor creates a student.")
-          }
-          await updateDoc(doc(db, "students", studentId), {
-            userID: userCredential.user.uid,
-          })
-          console.log(` Student doc (${studentId}) updated with userID.`)
-        }   
-      } catch (firestoreError) {
-        console.error(" Error creating user profile in Firestore:", firestoreError)
-        throw new Error("Failed to create user profile. Please try again.")
+      if (createdBy === "self") {
+        // Student signs up themselves → sign them out
+        await signOut(auth)
+        console.log("Student signed out after signup (no auto-login).")
+      } else if (createdBy === "tutor" && currentUser) {
+        // Student created by tutor → restore tutor session
+        await signInWithEmailAndPassword(auth, currentUser.email!, "password") // Assuming tutor's password is known or managed securely
+        console.log("Tutor session restored after creating student.")
       }
+
     } catch (error: any) {
-      console.error(" Error in signUp:", error)
+      console.error("Error in signUp:", error)
       throw error
     }
   }
-  
+
+  const createStudentByTutor = async (
+    email: string,
+    password: string,
+    name: string,
+    studentYear: string,
+    studentId: string
+  ) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        secondaryAuth,
+        email,
+        password
+      );
+
+      const userProfile = {
+        id: userCredential.user.uid,
+        email,
+        name,
+        role: "student",
+        year: studentYear || "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Save profile in Firestore
+      await setDoc(doc(secondaryDb, "users", userCredential.user.uid), userProfile);
+
+      // Initialize stats
+      await setDoc(doc(secondaryDb, "user_stats", userCredential.user.uid), {
+        totalQuizzes: 0,
+        averageScore: 0,
+        bestScore: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await updateDoc(doc(db, "students", studentId), {
+        userID: userCredential.user.uid,
+      });   
+
+      console.log("Student created successfully. Tutor remains logged in.");
+    } catch (error) {
+      console.error("Error creating student:", error);
+    }
+  };
+
+  // const signUp = async (
+  //   email: string,
+  //   password: string,
+  //   name: string,
+  //   role: "student" | "tutor" = "student",
+  //   studentYear: string = "",
+  //   createdBy: "tutor" | "self" = "tutor",
+  // ) => {
+  //   try {
+  //     console.log(`Creating account for ${email} with role ${role}`)
+
+  //     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+  //     const uid = userCredential.user.uid
+
+  //     const detectedRole =
+  //       email.includes("tutor") || email.includes("teacher") || email.includes("admin") ? "tutor" : role
+
+  //     const userProfile: User = {
+  //       id: uid,
+  //       email,
+  //       name,
+  //       role: detectedRole,
+  //       year: studentYear,
+  //       createdAt: new Date(),
+  //       updatedAt: new Date(),
+  //     }
+
+  //     try {
+  //       // 1. Store user profile
+  //       await setDoc(doc(db, "users", uid), userProfile)
+  //       console.log(`User profile created in Firestore for ${email}`)
+  //       setUserProfile(userProfile)
+
+  //       // 2. Initialize user stats
+  //       await setDoc(doc(db, "user_stats", uid), {
+  //         totalQuizzes: 0,
+  //         averageScore: 0,
+  //         bestScore: 0,
+  //         createdAt: new Date(),
+  //         updatedAt: new Date(),
+  //       })
+  //       console.log(`User stats initialized for ${email}`)
+
+  //       // 3. Create student doc immediately with UID
+  //       if (detectedRole === "student") {
+  //         await setDoc(doc(db, "students", uid), {
+  //           userID: uid,
+  //           name,
+  //           email,
+  //           batch: studentYear,
+  //           year: studentYear,
+  //           createdBy, user.uid,
+  //           joinedAt: new Date(),
+  //           performance: {
+  //             totalQuizzes: 0,
+  //             averageScore: 0,
+  //             lastActive: new Date(),
+  //           },
+  //         })
+  //         console.log(`Student doc created with UID as doc ID: ${uid}`)
+  //       }
+
+  //     } catch (firestoreError) {
+  //       console.error("Error creating user profile in Firestore:", firestoreError)
+  //       throw new Error("Failed to create user profile. Please try again.")
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Error in signUp:", error)
+  //     throw error
+  //   }
+  // }
+
+  const sendStudentInvite = async (
+    studentEmail: string,
+    studentName: string,
+    studentYear: string,
+    createdBy: "self" | "tutor" = "tutor"
+  ) => {
+    try {
+      // 1️⃣ Create a Firestore student doc (pending)
+      const studentDocRef = collection(db, "students")
+      await addDoc(studentDocRef, {
+        name: studentName || studentEmail.split("@")[0],
+        email: studentEmail,
+        batch: studentYear,
+        year: studentYear,
+        joinedAt: new Date(),
+        performance: { totalQuizzes: 0, averageScore: 0, lastActive: new Date() },
+        pending: true,
+        createdBy,
+      })
+      console.log(`Student doc created (pending): ${studentEmail}`)
+
+      // 2️⃣ Send magic sign-in link (passwordless)
+      const actionCodeSettings = {
+        url: "https://your-app.com/complete-signup", // Page where student completes signup
+        handleCodeInApp: true,
+      }
+
+      await sendSignInLinkToEmail(auth, studentEmail, actionCodeSettings)
+      console.log(`Invite link sent to student: ${studentEmail}`)
+
+      // Store email locally so student can retrieve it on signup page
+      window.localStorage.setItem("studentEmail", studentEmail)
+    } catch (error) {
+      console.error("Error sending student invite:", error)
+      throw error
+    }
+  }
+
+
   const logout = async () => {
     await signOut(auth)
   }
   
   const deleteUserAccount = async (uid?: string) => {
     try {
-      let targetUid = uid || auth.currentUser?.uid
+      // Determine target UID
+      const targetUid = uid || auth.currentUser?.uid;
+      if (!targetUid) throw new Error("No user ID provided.");
 
-      if (!targetUid) throw new Error("No user ID provided.")
+      // Get current user's role
+      const currentUserDoc = await getDoc(doc(db, "users", auth.currentUser!.uid));
+      const currentUserRole = currentUserDoc.data()?.role;
 
-      // Delete Firestore user profile
-      await deleteDoc(doc(db, "users", targetUid))
-      await deleteDoc(doc(db, "user_stats", targetUid))
-      console.log(` User Firestore data deleted for UID: ${targetUid}`)
-
-      // If deleting self, also remove from Firebase Auth
-      if (!uid && auth.currentUser) {
-        await deleteUser(auth.currentUser)
-        console.log(" User deleted from Firebase Auth.")
-      } else {
-        console.log(" Firestore user deleted, but Auth deletion requires Admin SDK.")
+      
+      // If current user is a tutor deleting a student
+      if (uid && currentUserRole === "tutor") {
+        // Delete Firestore student data
+        await deleteDoc(doc(db, "users", targetUid));
+        console.log('user doc delete!');
+        
+        await deleteDoc(doc(db, "user_stats", targetUid));
+        console.log('user_stats doc delete!');
+        // await deleteDoc(doc(db, "students", targetUid));
+        console.log(`Tutor deleted Firestore data for student UID: ${targetUid}`);
+        console.log("To delete Auth account, use Admin SDK or Cloud Function.");
+        return;
       }
 
+      // If user is deleting self
+      if (!uid && auth.currentUser) {
+        // Delete Firestore data
+        await deleteDoc(doc(db, "users", targetUid));
+        await deleteDoc(doc(db, "user_stats", targetUid));
+        await deleteDoc(doc(db, "students", targetUid));
+        console.log(`User deleted Firestore data for UID: ${targetUid}`);
+
+        // Delete Firebase Auth account
+        await deleteUser(auth.currentUser);
+        console.log("User deleted from Firebase Auth.");
+        return;
+      }
+
+      // If none of the above
+      throw new Error("You do not have permission to delete this user.");
     } catch (error) {
-      console.error(" Error deleting user:", error)
-      throw error
+      console.error("Error deleting user:", error);
+      throw error;
     }
-  }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, logout, isTutor, deleteUserAccount }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, createStudentByTutor, sendStudentInvite, logout, isTutor, deleteUserAccount }}>
       {children}
     </AuthContext.Provider>
   )

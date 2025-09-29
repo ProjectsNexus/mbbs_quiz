@@ -1631,7 +1631,7 @@ export function QuizManagement() {
 
 
           {/* Quizzes Table */}
-          <Table>
+          <Table className="w-full overflow-auto">
             <TableHeader>
               <TableRow>
                 <TableHead>
@@ -1656,7 +1656,7 @@ export function QuizManagement() {
             </TableHeader>
             <TableBody>
               {filteredQuizzes.map((quiz) => (
-                <TableRow key={quiz.id}>
+                <TableRow key={quiz.id} className="max-w-fit">
                     <TableCell>
                       <input
                         type="checkbox"

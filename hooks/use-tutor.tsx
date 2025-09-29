@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { createContext, useContext, useState, useEffect } from "react"
-import { collection, query, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, writeBatch } from "firebase/firestore"
+import { collection, query, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, writeBatch, setDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Student, Quiz, QuizAssignment, StudentPerformance, Notification } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
@@ -57,7 +57,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
   const [performances, setPerformances] = useState<StudentPerformance[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
-  const { signUp, deleteUserAccount } = useAuth()
+  const { signUp, deleteUserAccount, createStudentByTutor } = useAuth()
 
   useEffect(() => {
     // Set up real-time listeners for all collections
@@ -160,16 +160,18 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
 
   // Student Management Functions
   const addStudent = async (student: Omit<Student, "id">) => {
-    const addStudent = addDoc(collection(db, "students"), student)
-    await addStudent
+    const sudentdoc = await addDoc(collection(db, "students"), student)
 
-    //get student id
-    const studentId = (await addStudent).id 
-    await signUp(student.email, "Student@"+student.year , student.name, 'student', "tutor", studentId, student.year)
-  }
+    const studentId = (sudentdoc).id;
+    console.log(` Creating user account for student: ${student.email} with ID: ${studentId}`)
+    
+    // await signUp(student.email, 'Sudent@' + student.year, student.name, "student", "tutor" , student.year  );}
+    await createStudentByTutor(student.email, 'Sudent@' + student.year, student.name, student.year, studentId )
+  }    
 
   const removeStudent = async (studentId: string) => {
     try {
+      
       // 1️⃣ Get student doc to find linked user ID
       const studentRef = doc(db, "students", studentId)
       const studentSnap = await getDoc(studentRef)
