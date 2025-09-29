@@ -436,6 +436,7 @@ async bulkUpdateQuizzesSelection ( quizIds: string[], updates: { year?: string; 
     try {
       const docRef = await addDoc(collection(db, "quiz_assignments"), assignment)
 
+      
       await this.sendNotification({
         type: "quiz_assigned",
         title: "New Quiz Assigned",
