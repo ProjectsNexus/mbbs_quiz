@@ -295,8 +295,8 @@ export class FirebaseService {
   }): Promise<string | null> {
     try {
       //console.log(
-        ` Saving quiz result for user ${result.userId}: ${result.score}/${result.totalMarks} (${result.percentage}%)`,
-      )
+      //   ` Saving quiz result for user ${result.userId}: ${result.score}/${result.totalMarks} (${result.percentage}%)`,
+      // )
 
       const performance: StudentPerformance = {
         studentId: result.userId,
