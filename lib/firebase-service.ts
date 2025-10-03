@@ -104,6 +104,7 @@ export class FirebaseService {
       const q = query(
         sessionsRef,
         where("studentId", "==", userId),
+        orderBy("completedAt", "desc"),
         limit(limitCount)
       )
 
@@ -293,7 +294,7 @@ export class FirebaseService {
     topic: string
   }): Promise<string | null> {
     try {
-      console.log(
+      //console.log(
         ` Saving quiz result for user ${result.userId}: ${result.score}/${result.totalMarks} (${result.percentage}%)`,
       )
 
@@ -310,10 +311,10 @@ export class FirebaseService {
 
       const docRef = await addDoc(collection(db, "student_performances"), performance)
       // await addDoc(collection(db, "performances"), performance)
-      console.log(` Quiz result saved with ID: ${docRef.id}`)
+      //console.log(` Quiz result saved with ID: ${docRef.id}`)
 
       await this.updateUserStats(result.userId, result.score, result.percentage)
-      console.log(` User stats updated for ${result.userId}`)
+      //console.log(` User stats updated for ${result.userId}`)
 
       return docRef.id
     } catch (error) {
@@ -407,7 +408,7 @@ async bulkUpdateQuizzesSelection ( quizIds: string[], updates: { year?: string; 
       })
 
       await batch.commit()
-      console.log(`✅ Bulk updated ${quizIds.length} quizzes.`)
+      //console.log(`✅ Bulk updated ${quizIds.length} quizzes.`)
     } catch (error) {
       console.error("Error bulk updating quizzes:", error)
       throw error
@@ -484,9 +485,21 @@ async bulkUpdateQuizzesSelection ( quizIds: string[], updates: { year?: string; 
     }
   }
 
+  static async markNotificationAsRead(id: string): Promise<boolean> {
+    try {
+      const docRef = doc(db, "notifications", id);
+      await updateDoc(docRef, { isRead: true });
+      return true;
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      return false;
+    }
+  }
+  
   static async getUserNotifications(userId: string): Promise<Notification[]> {
     try {
       const notificationsRef = collection(db, "notifications")
+      
       const q = query(
         notificationsRef,
         where("recipients", "array-contains", userId),
@@ -545,7 +558,7 @@ async bulkUpdateQuizzesSelection ( quizIds: string[], updates: { year?: string; 
         performances.push({ ...doc.data() } as StudentPerformance)
       })
 
-      console.log(` Loaded ${performances.length} quiz results for tutor view`)
+      //console.log(` Loaded ${performances.length} quiz results for tutor view`)
       return performances
     } catch (error) {
       console.error("Error fetching all quiz results:", error)
@@ -556,19 +569,19 @@ async bulkUpdateQuizzesSelection ( quizIds: string[], updates: { year?: string; 
   //delete user data by tutor
   static async deleteUserData(userId: string): Promise<boolean> {
     try {
-      console.log(`[v0] Starting deletion of all data for user ${userId}`)
+      //console.log(`[Starting deletion of all data for user ${userId}`)
 
       // Delete user profile
       await deleteDoc(doc(db, "users", userId))
-      console.log(`[v0] Deleted user profile for ${userId}`)
+      //console.log(`[Deleted user profile for ${userId}`)
 
       // Delete user stats
       await deleteDoc(doc(db, "user_stats", userId))
-      console.log(`[v0] Deleted user stats for ${userId}`)
+      //console.log(`[Deleted user stats for ${userId}`)
 
       // Delete user settings
       await deleteDoc(doc(db, "user_settings", userId))
-      console.log(`[v0] Deleted user settings for ${userId}`)
+      //console.log(`[Deleted user settings for ${userId}`)
 
       // Delete quiz sessions
       const sessionsRef = collection(db, "quiz_sessions")
@@ -625,11 +638,11 @@ async bulkUpdateQuizzesSelection ( quizIds: string[], updates: { year?: string; 
       })
 
       await batch.commit()
-      console.log(`[v0] Successfully deleted all data for user ${userId}`)
+      //console.log(`[Successfully deleted all data for user ${userId}`)
 
       return true
     } catch (error) {
-      console.error(`[v0] Error deleting user data for ${userId}:`, error)
+      console.error(`[Error deleting user data for ${userId}:`, error)
       return false
     }
   }

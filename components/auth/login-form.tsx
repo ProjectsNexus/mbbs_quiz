@@ -9,6 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/hooks/use-auth"
 import { Loader2, Eye, EyeOff, GraduationCap, Users } from "lucide-react"
+import { StatusDialog } from "../ui/statusAlert"
+import { setegid } from "process"
+import { getFirebaseErrorMessage } from "@/lib/firebase-error"
 
 interface LoginFormProps {
   onToggleMode: () => void
@@ -30,7 +33,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
     try {
       await signIn(email, password)
     } catch (error: any) {
-      setError(error.message || "Failed to sign in")
+      setError(getFirebaseErrorMessage((error as any).code))
     } finally {
       setLoading(false)
     }
@@ -108,7 +111,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
             </div>
           </div>
 
-          {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+          {error && <StatusDialog status={error}  onClose={() => setError('')}/>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
@@ -164,6 +167,7 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
           <p>Student: student@demo.com / password</p>
           <p>Tutor: tutor@demo.com / password</p>
         </div> */}
+
       </CardContent>
     </Card>
   )

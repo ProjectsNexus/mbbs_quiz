@@ -14,6 +14,8 @@ import { FirebaseService } from "@/lib/firebase-service"
 import type { QuizConfig } from "./quiz-selection-wizard"
 import type { Question } from "@/lib/quiz-data"
 import { Clock, AlertTriangle, CheckCircle, XCircle, ChevronLeft, ChevronRight, Flag } from "lucide-react"
+import { firebaseErrorMessages, getFirebaseErrorMessage } from "@/lib/firebase-error"
+import { StatusDialog } from "../ui/statusAlert"
 
 interface QuizInterfaceProps {
   config: QuizConfig
@@ -44,6 +46,7 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
   const { user } = useAuth()
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<(number | null)[]>([])
   const [showExplanation, setShowExplanation] = useState(false)
@@ -67,11 +70,13 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
           const mockQuestions = generateMockQuestions(config.questionCount)
           setQuestions(mockQuestions)
         } else {
-          setQuestions(fetchedQuestions)
+          setQuestions(fetchedQuestions || [])
         }
 
         setAnswers(new Array(fetchedQuestions.length || config.questionCount).fill(null))
       } catch (error) {
+        setError(getFirebaseErrorMessage((error as any).code) || "Failed to load questions. Please try again.")
+        
         console.error("Error loading questions:", error)
         // Fallback to mock questions on error
         const mockQuestions = generateMockQuestions(config.questionCount)
@@ -97,7 +102,11 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
       status: "failed" as const,
     }
 
-    await saveQuizResults(results, timeSpent)
+    try {
+      await saveQuizResults(results, timeSpent)
+    } catch (error) {
+      setError(getFirebaseErrorMessage((error as any).code) || "Failed to save results. Please try again.")
+    }
     onComplete(results)
   }
 
@@ -154,7 +163,27 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
         subject: config.subject,
         topic: config.testTopic,
       })
+
+      const notification: Partial<Notification> = {
+        type: "result_published",
+        title: "Quiz Result Updated",
+        quizId: `${config.year}-${config.block}-${config.subject}-${config.testTopic}`,
+        studentId: user.uid,
+        student: user.displayName || user.email || "A student",
+        score: results.score,
+        totalMarks: config.questionCount,
+        percentage: results.score,
+        timeSpent,
+        quizTitle: `${config.subject} - ${config.testTopic}`,
+        createdAt: new Date(),
+        recipients: ['mN2DT6kY6xN4nmTmHNpqJq2USHq1', user.uid],
+        batch: config.year || "General",
+      }
+
+      await FirebaseService.sendNotification(notification, user.uid, )
+      
     } catch (error) {
+      setError(getFirebaseErrorMessage((error as any).code) || "Failed to save results. Please try again.")
       console.error("Error saving quiz results:", error)
     } finally {
       setSaving(false)
@@ -313,6 +342,9 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
           </Alert>
         </div>
       )}
+
+      {/* Error Message */}
+      {error && (<StatusDialog status={error} onClose={() => setError(null)} />)}
 
       {/* Question */}
       <div className="max-w-4xl mx-auto space-y-6">

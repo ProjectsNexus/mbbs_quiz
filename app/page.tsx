@@ -9,9 +9,9 @@ import { QuizInterface, type QuizResults } from "@/components/quiz/quiz-interfac
 import { QuizResults as QuizResultsComponent } from "@/components/quiz/quiz-results"
 import { TutorProvider } from "@/hooks/use-tutor"
 import { TutorDashboard } from "@/components/tutor/tutor-dashboard"
+import { UserSettings } from "@/components/setting/user-setting"
 
-type AppState = "dashboard" | "quiz-selection" | "quiz-active" | "quiz-results"
-
+type AppState = "dashboard" | "quiz-selection" | "quiz-active" | "quiz-results" 
 export default function Home() {
   const { user, userProfile, loading, isTutor } = useAuth()
   const [appState, setAppState] = useState<AppState>("dashboard")
@@ -75,11 +75,16 @@ export default function Home() {
     setQuizConfig(null)
   }
 
+  const handleUserSetting = () => {
+    if (userProfile) {
+      setAppState("user-settings")
+    }
+  }
   switch (appState) {
     case "dashboard":
       return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-          <Dashboard onStartQuiz={handleStartQuizSelection} />
+          <Dashboard onStartQuiz={handleStartQuizSelection} onOpenSettings={() => setAppState("user-settings")} />
         </div>
       )
 
@@ -112,7 +117,7 @@ export default function Home() {
     default:
       return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-          <Dashboard onStartQuiz={handleStartQuizSelection} />
+          <Dashboard onStartQuiz={handleStartQuizSelection}/>
         </div>
       )
   }

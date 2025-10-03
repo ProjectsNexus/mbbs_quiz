@@ -11,6 +11,7 @@ import { MBBS_STRUCTURE } from "@/lib/quiz-data"
 import { ChevronLeft, ChevronRight, Clock, FileText, Target } from "lucide-react"
 import { FirebaseService } from "@/lib/firebase-service"
 import RangeSlider from "../ui/range"
+import { StatusDialog } from "../ui/statusAlert"
 
 interface QuizSelectionWizardProps {
   onStartQuiz: (config: QuizConfig) => void
@@ -40,7 +41,7 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
 
   const totalSteps = 5
   const progress = (step / totalSteps) * 100
-
+  
   const years = Object.keys(MBBS_STRUCTURE)
   const blocks = config.year ? MBBS_STRUCTURE[config.year as keyof typeof MBBS_STRUCTURE].blocks : []
   const subjects =
@@ -58,8 +59,8 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
           config.year,
           config.block,   // keep as string if service expects string
           config.subject  // keep as string if service expects string
-        )
-        setTestTopics(topics)
+        ) 
+        setTestTopics(topics) 
       } else {
         setTestTopics([])
       }
@@ -146,6 +147,8 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
           </p>
         </div>
 
+        {errorMessage && (<StatusDialog status={errorMessage} onClose={() => setErrorMessage('')} />)}
+
         {/* Step Content */}
         <Card className="min-h-[400px]">
           <CardHeader>
@@ -191,13 +194,6 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {(errorMessage != '') ? (
-              <Card>
-                <CardContent>
-                  <p className="text-red-500">{errorMessage}</p>
-                </CardContent>
-              </Card>
-            ): ''}
             {/* Step 1: Year Selection */}
             {step === 1 && (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-1">

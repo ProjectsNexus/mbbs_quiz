@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/hooks/use-auth"
 import { Loader2, Eye, EyeOff, GraduationCap, Users } from "lucide-react"
+import { getFirebaseErrorMessage } from "@/lib/firebase-error"
+import { StatusDialog } from "../ui/statusAlert"
 
 interface SignupFormProps {
   onToggleMode: () => void
@@ -50,9 +52,9 @@ export function SignupForm({ onToggleMode }: SignupFormProps) {
     }
 
     try {
-      await signUp(email, password, name, role, 'self', '', '')
+      await signUp(email, password, name, role, 'self')
     } catch (error: any) {
-      setError(error.message || "Failed to create account")
+      setError(getFirebaseErrorMessage((error as any).code))
     } finally {
       setLoading(false)
     }
@@ -153,7 +155,7 @@ export function SignupForm({ onToggleMode }: SignupFormProps) {
             />
           </div>
 
-          {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+          {error && <StatusDialog status={error} onClose={() => setError("")} />}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (

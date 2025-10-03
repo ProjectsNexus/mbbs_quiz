@@ -32,7 +32,7 @@ export function NotificationCenter() {
     recipients: [] as string[],
   })
 
-  const batches = ["Batch A", "Batch B", "Batch C", "Batch D"]
+  const batches = ["1st Year", "2nd  Year", "3rd Year C", "4th Year D", "Final Year"]
   const notificationTypes = [
     { value: "quiz_assigned", label: "Quiz Assignment", icon: BookOpen },
     { value: "quiz_reminder", label: "Quiz Reminder", icon: Clock },
@@ -75,9 +75,9 @@ export function NotificationCenter() {
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case "quiz_assigned":
+      case "quiz_add":
         return "bg-blue-100 text-blue-800"
-      case "quiz_reminder":
+      case "user_add":
         return "bg-yellow-100 text-yellow-800"
       case "result_published":
         return "bg-green-100 text-green-800"
@@ -91,9 +91,9 @@ export function NotificationCenter() {
   // Quick notification templates
   const quickTemplates = [
     {
-      title: "Quiz Reminder",
-      message: "Don't forget to complete your assigned quiz. The deadline is approaching!",
-      type: "quiz_reminder" as const,
+      title: "Quiz Added",
+      message: "Dear Students, a new quiz has been added. Please check your dashboard for details.",
+      type: "quiz_add" as const,
     },
     {
       title: "New Quiz Available",
@@ -299,7 +299,7 @@ export function NotificationCenter() {
                       const weekAgo = new Date()
                       weekAgo.setDate(weekAgo.getDate() - 7)
                       return new Date(n.sentAt) > weekAgo
-                    }).length
+                    }).length                  
                   }
                 </p>
               </div>
@@ -357,10 +357,8 @@ export function NotificationCenter() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {notifications
-                .slice()
-                .reverse()
-                .map((notification) => (
+              {notifications.length > 0 && (
+                notifications .slice() .reverse() .map((notification) => (
                   <TableRow key={notification.id}>
                     <TableCell>
                       <div
@@ -382,7 +380,7 @@ export function NotificationCenter() {
                         <span className="text-sm">
                           {notification.recipients.includes("all")
                             ? "All Students"
-                            : `${notification.recipients.length} batch(es)`}
+                            : `${notification.recipients.length} Years`}
                         </span>
                       </div>
                     </TableCell>
@@ -390,8 +388,19 @@ export function NotificationCenter() {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">
-                          {new Date(notification.sentAt).toLocaleDateString()}{" "}
-                          {new Date(notification.sentAt).toLocaleTimeString()}
+                          {notification.sentAt && "seconds" in notification.sentAt
+                            ? new Date(notification.sentAt.seconds * 1000).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "N/A"}{" "}
+                          {notification.sentAt && "seconds" in notification.sentAt
+                            ? new Date(notification.sentAt.seconds * 1000).toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : ""}
                         </span>
                       </div>
                     </TableCell>
@@ -401,7 +410,7 @@ export function NotificationCenter() {
                         Delivered
                       </Badge>
                     </TableCell>
-                  </TableRow>
+                  </TableRow>)
                 ))}
             </TableBody>
           </Table>

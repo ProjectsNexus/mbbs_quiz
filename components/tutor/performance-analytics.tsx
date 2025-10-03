@@ -45,23 +45,25 @@ export function PerformanceAnalytics() {
   ]
 
   // Subject-wise Performance
-  const subjectPerformance = quizzes.reduce((acc, quiz) => {
-    const quizPerformances = performances.filter((p) => p.quizId === quiz.id)
+  const subjectPerformance = performances.reduce((acc, quiz) => {
+    const quizPerformances = performances.filter((p) => p.studentId === quiz.studentId && p.quizId === quiz.quizId)
     if (quizPerformances.length > 0) {
       const avgScore = Math.round(quizPerformances.reduce((sum, p) => sum + p.percentage, 0) / quizPerformances.length)
       acc.push({
-        subject: quiz.subject,
+        subject: quiz.quizId.trim().trimStart().split("-")[2], // assuming subject is the first word in quiz title
         averageScore: avgScore,
         attempts: quizPerformances.length,
       })
     }
+    
     return acc
   }, [] as any[])
 
   // Top and Low Performers
   const studentPerformances = students
     .map((student) => {
-      const studentAttempts = performances.filter((p) => p.studentId === student.id)
+      const studentAttempts = performances.filter((p) => p.studentId === student.userID)
+     
       const avgScore =
         studentAttempts.length > 0
           ? Math.round(studentAttempts.reduce((sum, p) => sum + p.percentage, 0) / studentAttempts.length)
@@ -79,6 +81,7 @@ export function PerformanceAnalytics() {
 
   // Quiz Analytics for Selected Quiz
   const selectedQuizAnalytics = selectedQuiz !== "all" ? getQuizAnalytics(selectedQuiz) : null
+  
 
   return (
     <div className="space-y-6">
@@ -206,15 +209,19 @@ export function PerformanceAnalytics() {
             <CardDescription>Average scores by subject</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={subjectPerformance}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="subject" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="averageScore" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
+            {subjectPerformance.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={subjectPerformance}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="subject" />
+                  <YAxis domain={[0, 100]} /> {/* keep scores bounded */}
+                  <Tooltip />
+                  <Bar dataKey="averageScore" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No subject performance data available</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -334,8 +341,8 @@ export function PerformanceAnalytics() {
                 {quizzes
                   .filter((q) => q.isPublished)
                   .map((quiz) => (
-                    <SelectItem key={quiz.id} value={quiz.id}>
-                      {quiz.title}
+                    <SelectItem key={quiz.id} value={quiz.topic || quiz.id}>
+                      {quiz.topic} - {quiz.title}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -343,6 +350,7 @@ export function PerformanceAnalytics() {
           </div>
 
           {selectedQuizAnalytics && (
+            <>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
@@ -369,6 +377,63 @@ export function PerformanceAnalytics() {
                 </CardContent>
               </Card>
             </div>
+              <div>
+                <h3 className="text-lg font-medium mt-4 mb-2">Top Performers</h3>
+                {selectedQuizAnalytics.topPerformers.length > 0 ? (
+                  <Table className="w-full ">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Score</TableHead>
+                        <TableHead>Precentage</TableHead>
+                        <TableHead>Total Questions</TableHead>
+                        <TableHead>Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedQuizAnalytics.topPerformers.map((perf, index) => {
+                        const student = students.find((s) => s.userID === perf.userID);
+                        
+                        return (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <div className="font-medium">
+                                {student ? student.name : "Unknown Student"}
+                              </div>
+                              <div className="text-sm text-muted-foreground">{perf.email}</div>
+                            </TableCell>
+                            <TableCell>
+                                {perf.score}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="default">
+                                {perf.percentage.toFixed(2)}%
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                                {perf.totalMarks}
+                            </TableCell>
+                            <TableCell>
+                              {perf.completedAt
+                                ? new Date(perf.completedAt.seconds * 1000 + perf.completedAt.nanoseconds / 1000000)
+                                    .toLocaleString("en-US", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                : "N/A"}
+                            </TableCell>
+
+
+                          </TableRow>
+                        )})}
+                        </TableBody>
+                      </Table>
+                      ) : null}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

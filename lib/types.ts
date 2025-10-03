@@ -10,6 +10,7 @@ export interface User {
 
 export interface Student {
   id: string
+  userID: string
   name: string
   email: string
   batch: string
@@ -62,6 +63,13 @@ export interface QuizAssignment {
 export interface StudentPerformance {
   studentId: string
   quizId: string
+  quizDetails?: {
+    subject: string
+    topic: string
+    year: string
+    block: string
+    mode: "exam" | "practice"
+  }
   score: number
   totalMarks: number
   percentage: number
@@ -77,7 +85,7 @@ export interface StudentPerformance {
 
 export interface Notification {
   id: string
-  type: "quiz_assigned" | "quiz_reminder" | "result_published" | "announcement"
+  type: "user_add"  | "quiz_add" | "result_published" | "announcement" | string
   title: string
   message: string
   recipients: string[]

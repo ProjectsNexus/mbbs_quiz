@@ -45,7 +45,7 @@ export function StudentManagement() {
     const matchesSearch =
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesBatch = selectedBatch === "all" || student.batch === selectedBatch
+    const matchesBatch = selectedBatch === "all" || student.year === selectedBatch
     return matchesSearch && matchesBatch
   })
 
@@ -310,7 +310,7 @@ export function StudentManagement() {
                   <SelectValue placeholder="Filter by batch" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Batches</SelectItem>
+                  <SelectItem value="all">All Year</SelectItem>
                   {batches.map((batch) => (
                     <SelectItem key={batch} value={batch}>
                       {batch}
@@ -325,7 +325,7 @@ export function StudentManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Student</TableHead>
-                  <TableHead>Batch</TableHead>
+                  <TableHead>Year</TableHead>
                   {/* <TableHead>Year</TableHead> */}
                   <TableHead>Performance</TableHead>
                   <TableHead>Join Date</TableHead>
@@ -370,9 +370,9 @@ export function StudentManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        {/* <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
                         <Button
                           variant="outline"
                           size="sm"

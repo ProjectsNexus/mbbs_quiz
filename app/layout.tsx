@@ -10,9 +10,9 @@ import { TutorProvider } from "@/hooks/use-tutor"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "MBBS Quiz App - Medical Education Platform",
+  title: "SilvRx - Medical Education Platform",
   description: "Comprehensive MBBS quiz application for medical students",
-  generator: "v0.app",
+  generator: "https://muhammadsaif.is-great.net/",
 }
 
 export default function RootLayout({

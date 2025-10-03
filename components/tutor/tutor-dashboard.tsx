@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -29,13 +29,144 @@ import { QuizManagement } from "./quiz-management"
 import { PerformanceAnalytics } from "./performance-analytics"
 import { NotificationCenter } from "./notification-center"
 import { Logo, LogoTitle } from "../ui/logo"
+import { Dialog, DialogContent, DialogOverlay } from "../ui/dialog"
+import { UserSettings } from "../setting/user-setting"
+import { StatusDialog } from "../ui/statusAlert"
+import { FirebaseService } from "@/lib/firebase-service"
+import { log } from "node:console"
+import { formatNotificationMessage, formatNotificationTime } from "@/lib/notification-formatter"
+import NotificationDrawer from "../ui/notificationdrawer"
 
 export function TutorDashboard() {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { students, quizzes, assignments, performances, loading } = useTutor()
   const [activeTab, setActiveTab] = useState("overview")
+  const [error, setError] = useState<string | null>(null);
+  const [isOpenSettingDialog, setIsOpenSettingDialog] = useState(false)
+  const [isNotificationsRead, setIsNotificationsRead] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
+  const [notifications, setNotifications] = useState<
+    {
+      id: string
+      title: string
+      message: string
+      type: string
+      time: string // already formatted
+      isRead: boolean
+    }[]
+  >([])
 
+  const [recentActivity, setRecentActivity] = useState<any[]>([
+    { type: "", student: "", quiz: "", score: '', time: "" }
+  ]);
+
+   useEffect(() => {
+      fetchNotifications()
+    }, [user?.uid])
+  
+    const fetchNotifications = async () => {
+      if (!user?.uid) return;
+  
+      try {
+        const fetchedNotifications = await FirebaseService.getUserNotifications(user.uid);
+  
+        if (fetchedNotifications) {
+          setNotifications(
+            fetchedNotifications.map((n: any) => ({
+              id: n.id,
+              title: n.title,
+              // 👇 dynamic message based on type, quiz, student, etc.
+              message: formatNotificationMessage({
+                id: n.id,
+                type: n.type,
+                title: n.title,
+                student: n.student,
+                quizTitle: n.quizTitle,
+                score: n.score,
+                totalMarks: n.totalMarks,
+                percentage: n.percentage,
+                batch: n.batch,
+                timeSpent: n.timeSpent,
+                isRead: n.isRead,
+              }),
+              type: n.type,
+              time: n.sentAt
+                ? formatNotificationTime(n.sentAt)
+                : "",
+              isRead: n.isRead,
+            }))
+          );
+  
+          // ✅ keep track if all notifications are read
+          setIsNotificationsRead(fetchedNotifications.every((n: any) => n.isRead));
+        }
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+      }
+    };
+  
+    const handleMarkAsRead = async (id: string) => {
+      // 🔹 update Firestore
+      await FirebaseService.markNotificationAsRead(id);
+  
+      // 🔹 update local state
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    };
+  
+  
+  useEffect(() => {
+  const getRecentActivity = async () => {
+    try {
+      const activity = await FirebaseService.getUserNotifications(user?.uid || "" );
+
+      setRecentActivity(
+        activity.map((act: any) => {
+          // convert Firestore Timestamp → JS Date
+          const date = act.sentAt?.toDate
+            ? act.sentAt.toDate() // if Firestore Timestamp
+            : new Date(
+                act.sentAt.seconds * 1000 +
+                  act.sentAt.nanoseconds / 1000000
+              ); // if plain JSON
+
+          return {
+            type:
+              act.type === "result_published"
+                ? "quiz_completed"
+                : act.type === "quiz_add"
+                ? "quiz_created"
+                : act.type === "quiz_assigned"
+                ? "quiz_assigned"
+                : act.type === "user_add"
+                ? "student_joined"
+                : "announcement",
+            title: act.title,
+            student: act.student,
+            quiz: act.quizTitle,
+            score: act.type === "result_published" ? act.score : undefined,
+            batch: act.batch,
+            time: date.toLocaleString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
+        })
+      );
+    } catch (err) {
+      console.error("Error fetching activity:", err);
+    }
+  };
+
+  getRecentActivity();
+}, [user?.uid, !loading]);
+
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
@@ -63,13 +194,6 @@ export function TutorDashboard() {
       changeType: "positive" as const,
     },
     {
-      label: "Assignments",
-      value: assignments.filter((a) => a.isActive).length.toString(),
-      icon: Calendar,
-      change: "+8%",
-      changeType: "positive" as const,
-    },
-    {
       label: "Avg Performance",
       value:
         performances.length > 0
@@ -81,15 +205,9 @@ export function TutorDashboard() {
     },
   ]
 
-  const recentActivity = [
-    { type: "quiz_completed", student: "John Doe", quiz: "Anatomy Basics", score: 85, time: "2 hours ago" },
-    { type: "quiz_assigned", quiz: "Physiology Advanced", batch: "Batch A", time: "4 hours ago" },
-    { type: "student_joined", student: "Jane Smith", batch: "Batch B", time: "1 day ago" },
-    { type: "quiz_created", quiz: "Biochemistry Fundamentals", time: "2 days ago" },
-  ]
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -117,12 +235,29 @@ export function TutorDashboard() {
               </Badge>
             </div>
 
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-full cursor-pointer" onClick={()=> setIsOpen(true)}>
+                <Bell className="h-4 w-4" />
+            </div>
+
+
             <Button variant="outline" size="icon" onClick={logout} className="rounded-full bg-transparent">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
+
+      {error && (<StatusDialog status={error} onClose={() => setError(null)} />)}
+
+      <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)} onClose={() => setIsOpen(false)} />
+        
+      {/*setting Dialog */}
+      <Dialog open={isOpenSettingDialog} onOpenChange={setIsOpenSettingDialog}>
+        <DialogOverlay className="fixed inset-0 bg-black/50" />
+        <DialogContent className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background p-6 rounded-lg shadow-lg w-full max-w-7xl max-h-[90vh] overflow-y-auto">
+          <UserSettings />
+        </DialogContent>
+      </Dialog>
 
       <div className="max-w-7xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -157,7 +292,7 @@ export function TutorDashboard() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stats.map((stat, index) => (
                 <Card key={index}>
                   <CardContent className="p-6">
@@ -184,7 +319,7 @@ export function TutorDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3  gap-6">
               <Card className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10" />
                 <CardHeader className="relative">
@@ -243,7 +378,7 @@ export function TutorDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
+                  {recentActivity.length > 0 ? recentActivity.map((activity, index) => (
                     <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="bg-primary/10 p-2 rounded-lg">
@@ -275,7 +410,40 @@ export function TutorDashboard() {
                         </Badge>
                       )}
                     </div>
-                  ))}
+                  )) : <p className="text-center text-sm text-muted-foreground">No recent activity available.</p>}  
+                  {/* {recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          {activity.type === "quiz_completed" && <Target className="h-4 w-4 text-primary" />}
+                          {activity.type === "quiz_assigned" && <Calendar className="h-4 w-4 text-primary" />}
+                          {activity.type === "student_joined" && <Users className="h-4 w-4 text-primary" />}
+                          {activity.type === "quiz_created" && <BookOpen className="h-4 w-4 text-primary" />}
+                        </div>
+                        <div>
+                          <div className="font-medium">
+                            {activity.type === "quiz_completed" && `${activity.student} completed ${activity.quiz}`}
+                            {activity.type === "quiz_assigned" && `${activity.quiz} assigned to ${activity.batch}`}
+                            {activity.type === "student_joined" && `${activity.student} joined ${activity.batch}`}
+                            {activity.type === "quiz_created" && `Created ${activity.quiz}`}
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Clock className="h-3 w-3" />
+                            {activity.time}
+                          </div>
+                        </div>
+                      </div>
+                      {activity.type === "quiz_completed" && (
+                        <Badge
+                          variant={
+                            activity.score! >= 80 ? "default" : activity.score! >= 60 ? "secondary" : "destructive"
+                          }
+                        >
+                          {activity.score}%
+                        </Badge>
+                      )}
+                    </div>
+                  ))} */}
                 </div>
               </CardContent>
             </Card>

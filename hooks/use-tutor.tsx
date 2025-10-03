@@ -7,6 +7,8 @@ import { collection, query, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDo
 import { db } from "@/lib/firebase"
 import type { Student, Quiz, QuizAssignment, StudentPerformance, Notification } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
+import { FirebaseService } from "@/lib/firebase-service"
+import { log } from "console"
 
 interface TutorContextType {
   students: Student[]
@@ -57,7 +59,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
   const [performances, setPerformances] = useState<StudentPerformance[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
-  const { signUp, deleteUserAccount, createStudentByTutor } = useAuth()
+  const { deleteUserAccount, createStudentByTutor } = useAuth()
 
   useEffect(() => {
     // Set up real-time listeners for all collections
@@ -117,7 +119,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     )
 
     // Performances listener
-    const performancesQuery = query(collection(db, "performances"))
+    const performancesQuery = query(collection(db, "student_performances"))
     unsubscribes.push(
       onSnapshot(
         performancesQuery,
@@ -143,6 +145,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
           console.log(`Loaded ${notificationsData.length} notifications`)
           clearTimeout(loadingTimeout)
           setLoading(false)
+          
         },
         (error) => {
           console.error("Error loading notifications:", error)
@@ -186,6 +189,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
 
       if (userId != undefined) {
         await deleteUserAccount(userId);
+        await FirebaseService.deleteUserData(userId);
       }
       console.log(userId + ' Delete User and there data')
       await deleteDoc(doc(db, "students", studentId))
@@ -262,7 +266,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
   }
 
   const getQuizAnalytics = (quizId: string) => {
-    const quizPerformances = performances.filter((perf) => perf.quizId === quizId)
+    const quizPerformances = performances.filter((perf) => perf.quizId.trim().trimStart().split('-')[3] === quizId)
     const totalAttempts = quizPerformances.length
     const averageScore =
       totalAttempts > 0 ? quizPerformances.reduce((sum, perf) => sum + perf.percentage, 0) / totalAttempts : 0
@@ -272,12 +276,15 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     const sortedPerformances = quizPerformances.sort((a, b) => b.percentage - a.percentage)
     const topPerformers = sortedPerformances
       .slice(0, 5)
-      .map((perf) => students.find((student) => student.id === perf.studentId)!)
+      // .map((perf) => students.find((student) => student.id === perf.studentId)!)
       .filter(Boolean)
     const lowPerformers = sortedPerformances
       .slice(-5)
-      .map((perf) => students.find((student) => student.id === perf.studentId)!)
+      // .map((perf) => students.find((student) => student.id === perf.studentId)!)
       .filter(Boolean)
+
+      console.log(topPerformers);
+      
 
     return {
       totalAttempts,

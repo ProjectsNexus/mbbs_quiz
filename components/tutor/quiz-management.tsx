@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { Plus, Search, Filter, Edit, Trash2, Eye, Send, BookOpen, Calendar, CheckCircle, XCircle } from "lucide-react"
 import type { Quiz, Question } from "@/lib/types"
 import { MBBS_STRUCTURE } from "@/lib/quiz-data"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 interface QuizDetails {
   year?: keyof typeof MBBS_STRUCTURE
@@ -138,7 +139,8 @@ export function QuizManagement() {
   const filteredQuizzes = quizzes.filter((quiz) => {
     const matchesSearch =
       quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quiz.subject.toLowerCase().includes(searchTerm.toLowerCase())
+      quiz.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      quiz.topic.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesYear = FilterBy.year === "all" || quiz.year === FilterBy.year
     const matchesBlock = FilterBy.block === "all" || quiz.block === FilterBy.block
@@ -1479,7 +1481,7 @@ export function QuizManagement() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search quizzes..."
+                placeholder="Search quizzes by Title, Topic & Subject "
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -1655,7 +1657,7 @@ export function QuizManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredQuizzes.map((quiz) => (
+              {filteredQuizzes.sort((a, b) => a.title.localeCompare(b.title)).map((quiz) => (
                 <TableRow key={quiz.id} className="max-w-fit">
                     <TableCell>
                       <input
@@ -1671,10 +1673,29 @@ export function QuizManagement() {
                         }}
                       />
                     </TableCell>
-                  <TableCell>
+                  {/* <TableCell className="w-16">
                     <div>
                       <div className="font-medium">{quiz.title}</div>
-                      <div className="text-sm text-muted-foreground">{quiz.description}</div>
+                      <div className="text-sm text-muted-foreground text-ellipsis w-1/2">{quiz.topic}</div>
+                    </div>
+                  </TableCell> */}
+                  <TableCell className="w-64">
+                    <div className="flex flex-col">
+                      {/* Quiz Title */}
+                      <div className="font-medium">{quiz.title}</div>
+
+                      {/* Topic with truncation + tooltip */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="text-sm text-muted-foreground truncate max-w-64">
+                            {quiz.topic}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {quiz.topic}
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </TableCell>
                   <TableCell>

@@ -18,8 +18,20 @@ import {
   LogOut,
   User,
   BarChart3,
+  Settings,
+  Bell,
 } from "lucide-react"
 import { Logo, LogoTitle } from "../ui/logo"
+import { Dialog } from "@radix-ui/react-dialog"
+import { DialogContent, DialogOverlay } from "../ui/dialog"
+import { UserSettings } from "../setting/user-setting"
+import { getFirebaseErrorMessage } from "@/lib/firebase-error"
+import { StatusDialog } from "../ui/statusAlert"
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import { ChartTooltip } from "../ui/chart"
+import NotificationDrawer from "../ui/notificationdrawer"
+import { formatNotificationMessage, formatNotificationTime } from "@/lib/notification-formatter";
+
 
 interface DashboardProps {
   onStartQuiz: () => void
@@ -28,6 +40,76 @@ interface DashboardProps {
 export function Dashboard({ onStartQuiz }: DashboardProps) {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const [isOpenSettingDialog, setIsOpenSettingDialog] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isNotificationsRead, setIsNotificationsRead] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
+  const [notifications, setNotifications] = useState<
+    {
+      id: string
+      title: string
+      message: string
+      type: string
+      time: string // already formatted
+      isRead: boolean
+    }[]
+  >([])
+  useEffect(() => {
+    fetchNotifications()
+  }, [user?.uid])
+
+  const fetchNotifications = async () => {
+    if (!user?.uid) return;
+
+    try {
+      const fetchedNotifications = await FirebaseService.getUserNotifications(user.uid);
+
+      if (fetchedNotifications) {
+        setNotifications(
+          fetchedNotifications.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            // 👇 dynamic message based on type, quiz, student, etc.
+            message: formatNotificationMessage({
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              student: n.student,
+              quizTitle: n.quizTitle,
+              score: n.score,
+              totalMarks: n.totalMarks,
+              percentage: n.percentage,
+              batch: n.batch,
+              timeSpent: n.timeSpent,
+              isRead: n.isRead,
+            }),
+            type: n.type,
+            time: n.sentAt
+              ? formatNotificationTime(n.sentAt)
+              : "",
+            isRead: n.isRead,
+          }))
+        );
+
+        // ✅ keep track if all notifications are read
+        setIsNotificationsRead(fetchedNotifications.every((n: any) => n.isRead));
+      }
+    } catch (err) {
+      console.error("Error fetching notifications:", err);
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    // 🔹 update Firestore
+    await FirebaseService.markNotificationAsRead(id);
+
+    // 🔹 update local state
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
+  };
+
+// Dashboard stats
 
   const [stats, setStats] = useState([
     { label: "Quizzes Taken", value: "-", icon: Target },
@@ -42,7 +124,7 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log(user?.uid);
+      
       
       if (!user?.uid) return
       try {
@@ -69,12 +151,14 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
           )
         }
       } catch (err) {
+        setError(getFirebaseErrorMessage((err as { code: string }).code))
         console.error("Error loading dashboard data:", err)
       }
     }
 
     fetchData()
   }, [user?.uid])
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -102,9 +186,17 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </Button>
 
-            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-full">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-full cursor-pointer" >
               <User className="h-4 w-4" />
               <span className="text-sm font-medium">{user?.email?.split("@")[0] || "Student"}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-full cursor-pointer" onClick={()=> setIsOpenSettingDialog(true)}>
+              <Settings className="h-4 w-4" />
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-full cursor-pointer" onClick={()=> setIsOpen(true)}>
+                <Bell className="h-4 w-4" />
             </div>
 
             <Button
@@ -119,6 +211,20 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
         </div>
       </header>
 
+      {error && (<StatusDialog status={error} onClose={() => setError(null)} />)}
+
+      {/*setting Dialog */}
+      <Dialog open={isOpenSettingDialog} onOpenChange={setIsOpenSettingDialog}>
+        <DialogOverlay className="fixed inset-0 bg-black/50" />
+        <DialogContent className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background p-6 rounded-lg shadow-lg w-full max-w-7xl max-h-[90vh] overflow-y-auto">
+          <UserSettings />
+        </DialogContent>
+      </Dialog>
+
+      {/* Main Content */}
+
+      <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)} onClose={() => setIsOpen(false)}
+        onMarkAsRead={handleMarkAsRead}/>
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Welcome Section */}
         <div className="text-center space-y-4">
@@ -234,6 +340,50 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
             </div>
           </CardContent>
         </Card> */}
+
+        {/* Quiz Performance Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance Over Time</CardTitle>
+            <CardDescription>Your quiz scores across attempts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentQuizzes.length > 0 ? (
+              <div className="w-full h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={recentQuizzes.map((entry) => ({
+                      ...entry,
+                      date: entry.date
+                        ? new Date(entry.date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "2-digit",
+                          })
+                        : "N/A",
+                    }))}
+                    margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={[0, 100]} />
+                    <ChartTooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="#8884d8"
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">No quiz history available yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Recent Activity */}
         <Card>
           <CardHeader>
@@ -253,17 +403,9 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
                         <BookOpen className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <div className="font-medium">{quiz.subject}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {quiz.date
-                            ? new Date(quiz.date).toLocaleDateString("en-US", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "N/A"}
+                        <div className="font-medium">{quiz.subject.trim().trimStart().split('-')[3]} - {quiz.subject.trim().trimStart().split("-")[2]}</div>
+                        <div className="text-sm text-muted-foreground"> 
+                          {quiz.date}
                         </div>
                       </div>
                     </div>
