@@ -40,9 +40,8 @@ const generateMockQuestions = (count: number): Question[] => {
 }
 
 export function QuizResults({ results, onRetakeQuiz, onBackToDashboard }: QuizResultsProps) {
-  const [questions] = useState<Question[]>(() => generateMockQuestions(results.totalQuestions))
-
-  
+  const [questions] = useState<Question[]>(results.question)
+ 
   const correctAnswers = results.answers.filter((answer, index) => answer === questions[index]?.correctAnswer).length
 
   const incorrectAnswers = results.answers.filter(
@@ -286,6 +285,7 @@ export function QuizResults({ results, onRetakeQuiz, onBackToDashboard }: QuizRe
                       )}
                       <Badge variant="outline" className="capitalize">
                         {question.difficulty}
+                            {/* 🟡 Skipped badge at top-right */}
                       </Badge>
                     </CardTitle>
                     <CardDescription>{question.question}</CardDescription>

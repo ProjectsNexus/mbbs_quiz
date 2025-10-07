@@ -3,32 +3,30 @@
 import { useState, useEffect, useRef } from "react"
 
 interface UseQuizTimerProps {
-  initialTime: number // in seconds
+  initialTime: number | null // ⬅️ null means "No Time Limit"
   onTimeUp: () => void
   onWindowBlur?: () => void
 }
 
 export function useQuizTimer({ initialTime, onTimeUp, onWindowBlur }: UseQuizTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(initialTime)
+  const [timeLeft, setTimeLeft] = useState<number | null>(initialTime)
   const [isRunning, setIsRunning] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const blurTimeRef = useRef<number | null>(null)
 
+  // 🧠 Handle visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // User left the window
         setIsPaused(true)
         blurTimeRef.current = Date.now()
         onWindowBlur?.()
       } else {
-        // User returned to the window
         if (blurTimeRef.current) {
           const blurDuration = Date.now() - blurTimeRef.current
-          if (blurDuration > 60000) {
-            // 60 seconds
-            // End quiz if user was away for more than 60 seconds
+          if (blurDuration > 60000 && initialTime !== null) {
+            // Only enforce timeout for limited mode
             onTimeUp()
             return
           }
@@ -40,12 +38,17 @@ export function useQuizTimer({ initialTime, onTimeUp, onWindowBlur }: UseQuizTim
 
     document.addEventListener("visibilitychange", handleVisibilityChange)
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
-  }, [onTimeUp, onWindowBlur])
+  }, [onTimeUp, onWindowBlur, initialTime])
 
+  // 🕒 Timer countdown logic
   useEffect(() => {
-    if (isRunning && !isPaused && timeLeft > 0) {
+    // ⛔ Skip running interval if "No Time Limit"
+    if (initialTime === null) return
+
+    if (isRunning && !isPaused && timeLeft && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
         setTimeLeft((prev) => {
+          if (prev === null) return null
           if (prev <= 1) {
             onTimeUp()
             return 0
@@ -65,8 +68,9 @@ export function useQuizTimer({ initialTime, onTimeUp, onWindowBlur }: UseQuizTim
         clearInterval(intervalRef.current)
       }
     }
-  }, [isRunning, isPaused, timeLeft, onTimeUp])
+  }, [isRunning, isPaused, timeLeft, onTimeUp, initialTime])
 
+  // 🔧 Control functions
   const start = () => setIsRunning(true)
   const pause = () => setIsPaused(true)
   const resume = () => setIsPaused(false)
@@ -79,7 +83,9 @@ export function useQuizTimer({ initialTime, onTimeUp, onWindowBlur }: UseQuizTim
     }
   }
 
-  const formatTime = (seconds: number) => {
+  // 🧮 Time formatting
+  const formatTime = (seconds: number | null) => {
+    if (seconds === null) return "No Time Limit"
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60

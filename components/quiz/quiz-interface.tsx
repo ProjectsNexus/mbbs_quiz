@@ -30,6 +30,7 @@ export interface QuizResults {
   totalQuestions: number
   timeSpent: number
   status: "completed" | "failed"
+  question: []
 }
 
 // Mock questions - in real app, these would come from Firebase
@@ -52,6 +53,7 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
   const [showExplanation, setShowExplanation] = useState(false)
   const [windowBlurWarning, setWindowBlurWarning] = useState(false)
   const [saving, setSaving] = useState(false)
+  const totalQuestion = config.questionCountRange[1] - config.questionCountRange[0] + 1
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -62,26 +64,27 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
           config.block,
           config.subject,
           config.testTopic,
-          config.questionCount,
+          config.questionCountRange,
         )
 
         if (fetchedQuestions.length === 0) {
           // Fallback to mock questions if no questions found in Firestore
-          const mockQuestions = generateMockQuestions(config.questionCount)
+          const mockQuestions = generateMockQuestions(totalQuestion)
           setQuestions(mockQuestions)
         } else {
           setQuestions(fetchedQuestions || [])
+          
         }
 
-        setAnswers(new Array(fetchedQuestions.length || config.questionCount).fill(null))
+        setAnswers(new Array(fetchedQuestions.length || totalQuestion).fill(null))
       } catch (error) {
         setError(getFirebaseErrorMessage((error as any).code) || "Failed to load questions. Please try again.")
         
         console.error("Error loading questions:", error)
         // Fallback to mock questions on error
-        const mockQuestions = generateMockQuestions(config.questionCount)
+        const mockQuestions = generateMockQuestions(totalQuestion)
         setQuestions(mockQuestions)
-        setAnswers(new Array(config.questionCount).fill(null))
+        setAnswers(new Array(totalQuestion).fill(null))
       } finally {
         setLoading(false)
       }
@@ -91,19 +94,21 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
   }, [config])
 
   const handleTimeUp = async () => {
-    const timeSpent = config.timeLimit * 60 - timeLeft
+    const timeSpent = config.isTimer ? config.timeLimit * 60 - timeLeft : 0
     const score = calculateScore()
     const results = {
       config,
       answers,
       score,
-      totalQuestions: config.questionCount,
+      totalQuestions: totalQuestion,
       timeSpent,
       status: "failed" as const,
+      question: questions
     }
 
     try {
       await saveQuizResults(results, timeSpent)
+      
     } catch (error) {
       setError(getFirebaseErrorMessage((error as any).code) || "Failed to save results. Please try again.")
     }
@@ -116,7 +121,7 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
   }
 
   const { timeLeft, isRunning, isPaused, start, formatTime } = useQuizTimer({
-    initialTime: config.timeLimit * 60,
+    initialTime: config.isTimer ? config.timeLimit * 60 : null,
     onTimeUp: handleTimeUp,
     onWindowBlur: handleWindowBlur,
   })
@@ -134,7 +139,7 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
         correct++
       }
     })
-    return Math.round((correct / config.questionCount) * 100)
+    return Math.round((correct / totalQuestion) * 100)
   }
 
   const saveQuizResults = async (results: QuizResults, timeSpent: number) => {
@@ -153,7 +158,7 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
         userId: user.uid,
         quizId: `${config.year}-${config.block}-${config.subject}-${config.testTopic}`,
         score: results.score,
-        totalMarks: config.questionCount,
+        totalMarks: totalQuestion,
         percentage: results.score,
         timeSpent,
         answers: detailedAnswers,
@@ -171,7 +176,7 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
         studentId: user.uid,
         student: user.displayName || user.email || "A student",
         score: results.score,
-        totalMarks: config.questionCount,
+        totalMarks: totalQuestion,
         percentage: results.score,
         timeSpent,
         quizTitle: `${config.subject} - ${config.testTopic}`,
@@ -215,20 +220,46 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
   }
 
   const handleSubmit = async () => {
-    const timeSpent = config.timeLimit * 60 - timeLeft
+    const timeSpent = config.isTimer ? config.timeLimit * 60 - timeLeft : 0
     const score = calculateScore()
     const results = {
       config,
       answers,
       score,
-      totalQuestions: config.questionCount,
+      totalQuestions: totalQuestion,
       timeSpent,
       status: "completed" as const,
+      question: questions
     }
-
+    
     await saveQuizResults(results, timeSpent)
     onComplete(results)
   }
+
+  // ✅ Handle manual finish (Finish button)
+  const handleFinished = async () => {
+    const timeSpent = config.timeLimit > 0 ? config.timeLimit * 60 - timeLeft : 0
+    const score = calculateScore()
+
+    const results = {
+      config,
+      answers,
+      score,
+      totalQuestions: questions.length,
+      timeSpent,
+      status: "completed" as const,
+      question: questions
+    }
+
+    try {
+      await saveQuizResults(results, timeSpent)
+    } catch (error) {
+      setError(getFirebaseErrorMessage((error as any).code) || "Failed to save results. Please try again.")
+    }
+
+    onComplete(results)
+  }
+
 
   const progress = ((currentQuestion + 1) / questions.length) * 100
   const answeredCount = answers.filter((answer) => answer !== null).length
@@ -244,7 +275,7 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
               <h2 className="text-lg font-semibold mb-2">Loading Quiz Questions</h2>
               <p className="text-muted-foreground">
-                Fetching {config.questionCount} questions from {config.subject} - {config.testTopic}
+                Fetching {config.questionCountRange[1] - config.questionCountRange[0]} questions from {config.subject} - {config.testTopic}
               </p>
             </CardContent>
           </Card>
@@ -301,8 +332,8 @@ export function QuizInterface({ config, onComplete, onExit }: QuizInterfaceProps
                   <Clock className="h-4 w-4" />
                   <span className={`font-mono text-lg ${timeLeft < 300 ? "text-destructive" : ""}`}>{formatTime}</span>
                 </div>
-                <Button variant="outline" onClick={onExit}>
-                  Exit Quiz
+                <Button variant="outline" onClick={handleFinished}>
+                  Finish
                 </Button>
               </div>
             </div>

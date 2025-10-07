@@ -20,19 +20,18 @@ import type { Student, Quiz, QuizAssignment, StudentPerformance, Notification } 
 
 export class FirebaseService {
    // Get questions for a specific quiz configuration
-  static async getQuestions(
+    static async getQuestions(
     year: string,
     block: string,
     subject: string,
     testTopic: string,
-    questionCount: number
-    ): Promise<Question[]> {
+    questionRange: [number, number] // e.g. [5, 20]
+  ): Promise<Question[]> {
     try {
-
-      // point to quizzes collection
+      // Reference to Firestore collection
       const questionsRef = collection(db, "quizzes");
 
-      // filter by fields
+      // Filter by fields
       const q = query(
         questionsRef,
         where("year", "==", year),
@@ -49,13 +48,19 @@ export class FirebaseService {
         const data = doc.data();
         const questionArray = data.questions || [];
 
-        // shuffle the array
-        const shuffled = [...questionArray].sort(() => Math.random() - 0.5);
+        // Optional: shuffle for randomization
+        // const shuffled = [...questionArray].sort(() => Math.random() - 0.5);
+        
+        // Determine slice indices from range
+        const startIndex = Math.max(0, questionRange[0] - 1); // user starts from 1
+        const endIndex = Math.min(questionArray.length, questionRange[1]);
 
-        // pick only N
-        const limited = shuffled.slice(0, questionCount);
+        
+        // Slice based on the selected range
+        const selected = questionArray.slice(startIndex, endIndex);
 
-        limited.forEach((q, idx) => {
+        // Map and push into final array
+        selected.forEach((q, idx) => {
           questions.push({
             id: q.id || `${doc.id}-${idx}`,
             question: q.question,
@@ -66,8 +71,6 @@ export class FirebaseService {
             marks: q.marks || 1,
           });
         });
-
-        
       });
 
       return questions;
@@ -76,6 +79,63 @@ export class FirebaseService {
       return [];
     }
   }
+
+  // static async getQuestions(
+  //   year: string,
+  //   block: string,
+  //   subject: string,
+  //   testTopic: string,
+  //   questionCount: []
+  //   ): Promise<Question[]> {
+  //   try {
+
+  //     // point to quizzes collection
+  //     const questionsRef = collection(db, "quizzes");
+
+  //     // filter by fields
+  //     const q = query(
+  //       questionsRef,
+  //       where("year", "==", year),
+  //       where("block", "==", block),
+  //       where("subject", "==", subject),
+  //       where("topic", "==", testTopic)
+  //     );
+
+  //     const querySnapshot = await getDocs(q);
+
+  //     let questions: Question[] = [];
+
+  //     querySnapshot.forEach((doc) => {
+  //       const data = doc.data();
+  //       const questionArray = data.questions || [];
+
+  //       // shuffle the array
+  //       const shuffled = [...questionArray].sort(() => Math.random() - 0.5);
+
+  //       // pick only N
+  //       const limited = shuffled.slice(0, questionCount);
+
+  //       limited.forEach((q, idx) => {
+  //         questions.push({
+  //           id: q.id || `${doc.id}-${idx}`,
+  //           question: q.question,
+  //           options: q.options || [],
+  //           correctAnswer: q.correctAnswer,
+  //           explanation: q.explanation || "",
+  //           difficulty: q.difficulty || "medium",
+  //           marks: q.marks || 1,
+  //         });
+  //       });
+
+        
+  //     });
+
+  //     return questions;
+  //   } catch (error) {
+  //     console.error("❌ Error fetching questions from Firestore:", error);
+  //     return [];
+  //   }
+  // }
 
 
 
@@ -166,10 +226,15 @@ export class FirebaseService {
   }
 
   // Get available test topics for a subject
-  static async getTestTopics(year: string | undefined, blocks: string[], subjects: string[]): Promise<string[]> {
+  static async getTestTopics(
+    year: string | undefined,
+    blocks: string[],
+    subjects: string[]
+  ): Promise<Array<{ topic: string; NumberQuestions: number }>> {
     try {
       const ref = collection(db, "quizzes");
-      
+
+      // Firestore `where` does not accept arrays directly; use `in` for multiple values
       const q = query(
         ref,
         where("year", "==", year),
@@ -178,18 +243,30 @@ export class FirebaseService {
       );
 
       const snapshot = await getDocs(q);
-      
+
       if (snapshot.empty) {
         console.warn("No topics found for given filters");
         return [];
       }
-            
-      return snapshot.docs.map((doc) => doc.data().topic);
+
+      // Map documents to topic details
+      const topicDetails = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          topic: data.topic,
+          NumberQuestions: Array.isArray(data.questions)
+            ? data.questions.length
+            : 0, // safeguard in case questions is not an array
+        };
+      });
+
+      return topicDetails;
     } catch (error) {
       console.error("Error fetching topics:", error);
       return [];
     }
   }
+
 
   // Get number of Questions in a Quiz
   static async getQuestionsNumber(
