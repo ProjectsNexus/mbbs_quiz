@@ -37,7 +37,8 @@ export class FirebaseService {
         where("year", "==", year),
         where("block", "==", block),
         where("subject", "==", subject),
-        where("topic", "==", testTopic)
+        where("topic", "==", testTopic),
+        where("isPublished", "==", true)
       );
 
       const querySnapshot = await getDocs(q);
