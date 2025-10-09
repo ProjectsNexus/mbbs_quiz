@@ -23,6 +23,7 @@ import {
   TrendingUp,
   Clock,
   Target,
+  HelpCircle,
 } from "lucide-react"
 import { StudentManagement } from "./student-management"
 import { QuizManagement } from "./quiz-management"
@@ -194,6 +195,13 @@ export function TutorDashboard() {
       changeType: "positive" as const,
     },
     {
+      label: "Total Questions",
+      value: quizzes.filter((q) => q.isPublished).reduce((total, quiz) => total + quiz.questions.length, 0).toString(),
+      icon: HelpCircle,
+      change: "+7%",
+      changeType: "positive" as const,
+    },
+    {
       label: "Avg Performance",
       value:
         performances.length > 0
@@ -249,7 +257,7 @@ export function TutorDashboard() {
 
       {error && (<StatusDialog status={error} onClose={() => setError(null)} />)}
 
-      <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)} onClose={() => setIsOpen(false)} />
+      <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)} onClose={()=> setIsOpen(false)} />
         
       {/*setting Dialog */}
       <Dialog open={isOpenSettingDialog} onOpenChange={setIsOpenSettingDialog}>
@@ -292,7 +300,7 @@ export function TutorDashboard() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, index) => (
                 <Card key={index}>
                   <CardContent className="p-6">

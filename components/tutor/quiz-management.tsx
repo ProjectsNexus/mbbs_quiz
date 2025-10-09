@@ -20,10 +20,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTutor } from "@/hooks/use-tutor"
 import { useAuth } from "@/hooks/use-auth"
-import { Plus, Search, Filter, Edit, Trash2, Eye, Send, BookOpen, Calendar, CheckCircle, XCircle } from "lucide-react"
+import { Plus, Search, Filter, Edit, Trash2, Eye, Send, BookOpen, Calendar, CheckCircle, XCircle, FileWarningIcon } from "lucide-react"
 import type { Quiz, Question } from "@/lib/types"
 import { MBBS_STRUCTURE } from "@/lib/quiz-data"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
+import { TooltipProvider } from "@radix-ui/react-tooltip"
 
 interface QuizDetails {
   year?: keyof typeof MBBS_STRUCTURE
@@ -38,7 +39,7 @@ interface QuizDetails {
 
 export function QuizManagement() {
   const { user } = useAuth()
-  const { quizzes, createQuiz, updateQuiz, bulkUpdatedQuiz, deleteQuiz, publishQuiz, assignQuiz, students } = useTutor()
+  const { quizzes, createQuiz, updateQuiz, bulkUpdatedQuiz, deleteQuiz, publishQuiz, DraftQuiz, students } = useTutor()
   const [searchTerm, setSearchTerm] = useState("")
   const [isDisable, setisDisable] = useState(false)
   const [isFlterShow, setisFilerShow] = useState(false)
@@ -47,19 +48,19 @@ export function QuizManagement() {
   const [isBulkUpadateDialogOpen, setIsBulkUpadateDialogOpen] = useState(false)
   const [viewQuiz, setViewQuiz] = useState<Quiz | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
+  const [isDraftDialogOpen, setIsDraftDialogOpen] = useState(false)
   const [isJsonUploadDialogOpen, setIsJsonUploadDialogOpen] = useState(false)
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null)
   const [selectedQuizzes, setSelectedQuizzes] = useState<string[]>([])
 
   const [newQuiz, setNewQuiz] = useState({
-    title: "",
+    title: "Test ",
     description: "",
     subject: "",
     topic: "",
     difficulty: "medium" as const,
-    year: "2nd Year",
-    block: "D",
+    year: "3nd Year",
+    block: "H",
     timeLimit: 60,
     questions: [] as Question[],
   })
@@ -98,7 +99,7 @@ export function QuizManagement() {
   const [newQuestion, setNewQuestion] = useState({
     question: "",
     options: ["", "", "", ""],
-    correctAnswer: 0,
+    answer: 0,
     explanation: "",
     marks: 1,
     difficulty: "medium" as const,
@@ -115,7 +116,7 @@ export function QuizManagement() {
     mapping: {
       questionField: "statement",
       optionsField: "options",
-      correctAnswerField: "correctAnswer",
+      answerField: "answer",
       explanationField: "explanation",
       marksField: "marks",
       difficultyField: "difficulty",
@@ -308,7 +309,7 @@ export function QuizManagement() {
       setNewQuestion({
         question: "",
         options: ["", "", "", ""],
-        correctAnswer: 0,
+        answer: 0,
         explanation: "",
         marks: 1,
         difficulty: "medium",
@@ -316,7 +317,7 @@ export function QuizManagement() {
     }
   }
 
-  const handleAssignQuiz = async () => {
+  const handleDraftQuiz = async () => {
     if (selectedQuiz && assignment.assignedTo.length > 0) {
       await assignQuiz({
         quizId: selectedQuiz.id,
@@ -325,7 +326,7 @@ export function QuizManagement() {
         instructions: assignment.instructions,
         isActive: true,
       })
-      setIsAssignDialogOpen(false)
+      setIsDraftDialogOpen(false)
       setSelectedQuiz(null)
       setAssignment({
         assignedTo: [],
@@ -353,7 +354,7 @@ export function QuizManagement() {
           id: item.id || `q${index + 1}`,
           question: item.statement || item.question || "",
           options: optionsArray,
-          correctAnswer: answerIndex,
+          answer: answerIndex,
           explanation: item.explanation || "",
           marks: 1,
           difficulty: "medium" as const,
@@ -379,7 +380,7 @@ export function QuizManagement() {
         mapping: {
           questionField: "statement",
           optionsField: "options",
-          correctAnswerField: "correctAnswer",
+          answerField: "answer",
           explanationField: "explanation",
           marksField: "marks",
           difficultyField: "difficulty",
@@ -650,17 +651,17 @@ export function QuizManagement() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="correctAnswerField">Correct Answer Field</Label>
+                      <Label htmlFor="answerField">Correct Answer Field</Label>
                       <Input
-                        id="correctAnswerField"
-                        value={jsonUpload.mapping.correctAnswerField}
+                        id="answerField"
+                        value={jsonUpload.mapping.answerField}
                         onChange={(e) =>
                           setJsonUpload({
                             ...jsonUpload,
-                            mapping: { ...jsonUpload.mapping, correctAnswerField: e.target.value },
+                            mapping: { ...jsonUpload.mapping, answerField: e.target.value },
                           })
                         }
-                        placeholder="correctAnswer"
+                        placeholder="answer"
                       />
                     </div>
                     <div>
@@ -874,11 +875,11 @@ export function QuizManagement() {
                       </div>
                       <div className="grid grid-cols-3 gap-4">
                         <div>
-                          <Label htmlFor="correctAnswer">Correct Answer</Label>
+                          <Label htmlFor="answer">Correct Answer</Label>
                           <Select
-                            value={newQuestion.correctAnswer.toString()}
+                            value={newQuestion.answer.toString()}
                             onValueChange={(value) =>
-                              setNewQuestion({ ...newQuestion, correctAnswer: Number.parseInt(value) })
+                              setNewQuestion({ ...newQuestion, answer: Number.parseInt(value) })
                             }
                           >
                             <SelectTrigger>
@@ -959,7 +960,7 @@ export function QuizManagement() {
                                     {question.options.map((option, optIndex) => (
                                       <div
                                         key={optIndex}
-                                        className={`p-2 rounded ${optIndex === question.correctAnswer ? "bg-green-100 text-green-800" : "bg-muted"}`}
+                                        className={`p-2 rounded ${optIndex === question.answer ? "bg-green-100 text-green-800" : "bg-muted"}`}
                                       >
                                         {optIndex + 1}. {option}
                                       </div>
@@ -1180,11 +1181,11 @@ export function QuizManagement() {
                       </div>
                       <div className="grid grid-cols-3 gap-4">
                         <div>
-                          <Label htmlFor="correctAnswer">Correct Answer</Label>
+                          <Label htmlFor="answer">Correct Answer</Label>
                           <Select
-                            value={newQuestion.correctAnswer.toString()}
+                            value={newQuestion.answer.toString()}
                             onValueChange={(value) =>
-                              setNewQuestion({ ...newQuestion, correctAnswer: Number.parseInt(value) })
+                              setNewQuestion({ ...newQuestion, answer: Number.parseInt(value) })
                             }
                           >
                             <SelectTrigger>
@@ -1265,7 +1266,7 @@ export function QuizManagement() {
                                     {question.options.map((option, optIndex) => (
                                       <div
                                         key={optIndex}
-                                        className={`p-2 rounded ${optIndex === question.correctAnswer ? "bg-green-100 text-green-800" : "bg-muted"}`}
+                                        className={`p-2 rounded ${optIndex === question.answer ? "bg-green-100 text-green-800" : "bg-muted"}`}
                                       >
                                         {optIndex + 1}. {option}
                                       </div>
@@ -1441,7 +1442,7 @@ export function QuizManagement() {
                             <div
                               key={optIndex}
                               className={`p-2 rounded ${
-                                optIndex === q.correctAnswer
+                                optIndex === q.answer
                                   ? "bg-green-100 text-green-800"
                                   : "bg-muted"
                               }`}
@@ -1605,6 +1606,16 @@ export function QuizManagement() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
+                  selectedQuizzes.forEach((id) => DraftQuiz(id))
+                  setSelectedQuizzes([])
+                }}
+              >
+                Unpublished Selected
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
                   selectedQuizzes.forEach((id) => deleteQuiz(id))
                   setSelectedQuizzes([])
                 }}
@@ -1616,7 +1627,7 @@ export function QuizManagement() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setIsAssignDialogOpen(true)
+                  setIsDraftDialogOpen(true)
                 }}
               >
                 Assign Selected
@@ -1648,7 +1659,7 @@ export function QuizManagement() {
                   />
                 </TableHead>
                 <TableHead>Quiz</TableHead>
-                <TableHead>Subject</TableHead>
+                <TableHead>Year / Block / Subject</TableHead>
                 <TableHead>Questions</TableHead>
                 <TableHead>Difficulty</TableHead>
                 <TableHead>Status</TableHead>
@@ -1699,7 +1710,7 @@ export function QuizManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{quiz.subject}</Badge>
+                    <Badge variant="outline">{quiz.year} / {quiz.block} / {quiz.subject}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -1745,37 +1756,81 @@ export function QuizManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleViewQuiz(quiz)}>
-                        <Eye className="h-4 w-4" /> 
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleOpenUpdate(quiz)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      {quiz.isPublished && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedQuiz(quiz)
-                            setIsAssignDialogOpen(true)
-                          }}
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => handleViewQuiz(quiz)}>
+                              <Eye className="h-4 w-4" /> 
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View Quiz</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => handleOpenUpdate(quiz)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit Quiz</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      {quiz.isPublished ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => DraftQuiz(quiz.id)}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Unpublish Quiz</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={() => publishQuiz(quiz.id)}>
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Publish Quiz</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
-                      {!quiz.isPublished && (
-                        <Button variant="outline" size="sm" onClick={() => publishQuiz(quiz.id)}>
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteQuiz(quiz.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteQuiz(quiz.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete Quiz</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -1784,62 +1839,6 @@ export function QuizManagement() {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Assignment Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Quiz</DialogTitle>
-            <DialogDescription>Assign "{selectedQuiz?.title}" to students or batches</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Assign To</Label>
-              <div className="space-y-1 grid grid-cols-2 gap-3 my-2">
-                {batches.map((batch) => (
-                  <div key={batch} className="flex items-center  space-x-2">
-                    <input
-                      type="checkbox"
-                      id={batch}
-                      checked={assignment.assignedTo.includes(batch)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setAssignment({
-                            ...assignment,
-                            assignedTo: [...assignment.assignedTo, batch],
-                          })
-                        } else {
-                          setAssignment({
-                            ...assignment,
-                            assignedTo: assignment.assignedTo.filter((item) => item !== batch),
-                          })
-                        }
-                      }}
-                    />
-                    <Label htmlFor={batch}>{batch}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Label htmlFor="instructions">Instructions</Label>
-              <Textarea
-                id="instructions"
-                value={assignment.instructions}
-                onChange={(e) => setAssignment({ ...assignment, instructions: e.target.value })}
-                placeholder="Any special instructions for students"
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAssignQuiz}>Assign Quiz</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
