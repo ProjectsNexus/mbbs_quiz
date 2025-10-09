@@ -14,7 +14,7 @@ import { FirebaseService } from "@/lib/firebase-service"
 import type { QuizConfig } from "./quiz-selection-wizard"
 import type { Question } from "@/lib/quiz-data"
 import { Clock, AlertTriangle, CheckCircle, XCircle, ChevronLeft, ChevronRight, Flag } from "lucide-react"
-import { firebaseErrorMessages, getFirebaseErrorMessage } from "@/lib/firebase-error"
+import {  getFirebaseErrorMessage } from "@/lib/firebase-error"
 import { StatusDialog } from "../ui/statusAlert"
 
 interface QuizInterfaceProps {

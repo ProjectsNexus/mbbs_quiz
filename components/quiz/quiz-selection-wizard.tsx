@@ -336,7 +336,7 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
                   
                   <div>
                     <Label htmlFor="practice" className="cursor-pointer flex flex-row gap-2">
-                      <Input type="checkbox" name="setTimer" id="settimer" className="w-3" checked={!config.isTimer} onClick={(e) => setConfig({ ...config, isTimer: !e.target.checked ? true : false }) }/>
+                      <Input type="checkbox" name="setTimer" id="settimer" className="w-3" defaultChecked={!config.isTimer} onClick={(e) => setConfig({ ...config, isTimer: !e.target.checked ? true : false }) }/>
                       <span>No Time Limit</span>
                     </Label>
                   </div>

@@ -65,7 +65,7 @@ export class FirebaseService {
             id: q.id || `${doc.id}-${idx}`,
             question: q.question,
             options: q.options || [],
-            correctAnswer: q.correctAnswer,
+            correctAnswer: q.correctAnswer || q.answer,
             explanation: q.explanation || "",
             difficulty: q.difficulty || "medium",
             marks: q.marks || 1,
