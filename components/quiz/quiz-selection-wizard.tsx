@@ -12,6 +12,8 @@ import { ChevronLeft, ChevronRight, Clock, FileText, Target } from "lucide-react
 import { FirebaseService } from "@/lib/firebase-service"
 import RangeSlider from "../ui/range"
 import { StatusDialog } from "../ui/statusAlert"
+import { Input } from "../ui/input"
+import { Slider } from "../ui/slider"
 
 interface QuizSelectionWizardProps {
   onStartQuiz: (config: QuizConfig) => void
@@ -25,18 +27,20 @@ export interface QuizConfig {
   testTopic: string
   mode: "exam" | "practice"
   timeLimit: number | 0
-  questionCount: number | 0
+  isTimer: boolean
+  questionCountRange: [number, number] | 0
 }
 
 export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizardProps) {
   const [step, setStep] = useState(1)
-  const [testTopics, setTestTopics] = useState<string[] | undefined>([])
+  const [testTopics, setTestTopics] = useState<{ topic: string; NumberQuestions: number; }[] | undefined>([])
   const [errorMessage, setErrorMessage] = useState('')
   const [MaxQuestionsAllow , setMaxQuestionsAllow] = useState(Number || 60)
   const [config, setConfig] = useState<Partial<QuizConfig>>({
     mode: "practice",
     timeLimit: 30,
-    questionCount: 30,
+    questionCountRange: [2, 10],
+    isTimer: true
   })
 
   const totalSteps = 5
@@ -55,34 +59,20 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
   useEffect(() => {
     const fetchTopics = async () => {
       if (config.year && config.block && config.subject) {
-        const topics = await FirebaseService.getTestTopics(
+        const topicDatials = await FirebaseService.getTestTopics(
           config.year,
           config.block,   // keep as string if service expects string
           config.subject  // keep as string if service expects string
         ) 
-        setTestTopics(topics) 
+        setTestTopics(topicDatials || []) 
+        
       } else {
         setTestTopics([])
       }
-
-      if (step === 4) {
-        if (config.year && config.block && config.subject && config.testTopic) {
-          const count = await FirebaseService.getQuestionsNumber(
-            config.year,
-            config.block,
-            config.subject,
-            config.testTopic
-          )
-          setMaxQuestionsAllow(count?.length || 60)
-          console.log(count);
-          } else {
-            setMaxQuestionsAllow(60)
-          }
-        }   
-      }
+    }
 
     fetchTopics() // <--- call it!
-  }, [config.year, config.block, config.subject, config.testTopic])
+  }, [config.year, config.block, config.subject])
 
   const canProceed = () => {
     switch (step) {
@@ -95,7 +85,7 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
       case 4:
         return !!config.testTopic
       case 5:
-        return !!config.mode && !!config.timeLimit && !!config.questionCount
+        return !!config.mode && !!config.timeLimit && !!config.questionCountRange
       default:
         return false
     }
@@ -282,23 +272,23 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
             {step === 4 && (
               <div className="grid grid-cols-1 gap-4 p-3 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400/50 scrollbar-track-transparent hover:scrollbar-thumb-gray-600/70">
                 {testTopics != undefined && testTopics.length !== 0 ?
-                  testTopics.map((topic) => (
+                  testTopics.map((topics) => (
                     <Card
-                      key={topic}
+                      key={topics.topic}
                       className={`cursor-pointer transition-all hover:shadow-md ${
-                        config.testTopic === topic ? "ring-2 ring-primary bg-primary/5" : ""
+                        config.testTopic === topics.topic ? "ring-2 ring-primary bg-primary/5" : ""
                       }`}
-                      onClick={() => setConfig({ ...config, testTopic: topic })}
+                      onClick={() => {setConfig({ ...config, testTopic: topics.topic }); setMaxQuestionsAllow(topics.NumberQuestions)}}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="font-semibold">{topic}</h3>
+                            <h3 className="font-semibold">{topics.topic}</h3>
                             <p className="text-sm text-muted-foreground">
                               {config.subject} - Block {config.block}
                             </p>
                           </div>
-                          <Badge variant="outline">~50 questions</Badge>
+                          <Badge variant="outline">{topics.NumberQuestions}</Badge>
                         </div>
                       </CardContent>
                     </Card>
@@ -340,32 +330,68 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
                     </div>
                   </RadioGroup>
                 </div>
+                
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Advence Setting</Label>
+                  
+                  <div>
+                    <Label htmlFor="practice" className="cursor-pointer flex flex-row gap-2">
+                      <Input type="checkbox" name="setTimer" id="settimer" className="w-3" checked={!config.isTimer} onClick={(e) => setConfig({ ...config, isTimer: !e.target.checked ? true : false }) }/>
+                      <span>No Time Limit</span>
+                    </Label>
+                  </div>
 
-                <RangeSlider
-                  name="timer"
-                  min={5}
-                  max={MaxQuestionsAllow}
-                  value={config.timeLimit != undefined ? config.timeLimit : 5}
-                  onChange={(value) =>
-                    setConfig({
-                      ...config,
-                      timeLimit: typeof value === "string" ? parseInt(value, 10) : value,
-                    })
-                  }
-                />
+                  <div>
+                    <Label htmlFor="practice" className="cursor-pointer">Timer</Label>
+                    <RangeSlider
+                      name="timer"
+                      min={0}
+                      max={MaxQuestionsAllow}
+                      disabled={!config.isTimer}
+                      value={config.timeLimit != undefined ? config.timeLimit : 0}
+                      onChange={(value) =>
+                        setConfig({
+                          ...config,
+                          timeLimit: typeof value === "string" ? parseInt(value, 10) : value,
+                        })
+                      }
+                    />
+                  </div>
+                
+                  <div className="flex flex-col gap-5">
+                    <Label htmlFor="questionCountRange" className="cursor-pointer">
+                      Number of Questions
+                    </Label>
 
-                <RangeSlider
-                  name="questionCount"
-                  min={5}
-                  max={MaxQuestionsAllow}
-                  value={config.questionCount != undefined ? config.questionCount : 5}
-                  onChange={(value) =>
-                    setConfig({
-                      ...config,
-                      questionCount: typeof value === "string" ? parseInt(value, 10) : value,
-                    })
-                  }
-                />
+                    <Slider
+                      id="questionCountRange"
+                      min={1}
+                      max={MaxQuestionsAllow}
+                      step={1}
+                      // ✅ Must be an array for 2 handles
+                      value={
+                        Array.isArray(config.questionCountRange)
+                          ? config.questionCountRange
+                          : [1, MaxQuestionsAllow]
+                      }
+                      // ✅ shadcn/Radix uses onValueChange, not onChange
+                      onValueChange={(value: number[]) => {
+                        if (Array.isArray(value) && value.length === 2) {
+                          setConfig({
+                            ...config,
+                            questionCountRange: value as [number, number],
+                          })
+                        }
+                      }}
+                    />
+
+                    <div className="flex justify-between text-sm text-muted-foreground mt-2">
+                      <span>Start: {config.questionCountRange?.[0] ?? 1}</span>
+                      <span>End: {config.questionCountRange?.[1] ?? MaxQuestionsAllow}</span>
+                    </div>
+                  </div>
+
+                </div>
 
 
                 {/* Quiz Summary */}
@@ -389,10 +415,10 @@ export function QuizSelectionWizard({ onStartQuiz, onBack }: QuizSelectionWizard
                         <span className="font-medium">Mode:</span> {config.mode === "practice" ? "Practice" : "Exam"}
                       </p>
                       <p>
-                        <span className="font-medium">Duration:</span> {config.timeLimit} minutes
+                        <span className="font-medium">Duration:</span> {config.isTimer ? config.timeLimit + "minutes" : "No limit"}
                       </p>
                       <p>
-                        <span className="font-medium">Questions:</span> {config.questionCount}
+                        <span className="font-medium">Questions:</span> {config.questionCountRange[0]} - {config.questionCountRange[1]}
                       </p>
                     </div>
                   </CardContent>
