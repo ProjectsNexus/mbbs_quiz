@@ -15,7 +15,6 @@ import {
 import { addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
 import { auth, db, secondaryAuth, secondaryDb } from "@/lib/firebase"
 import type { User } from "@/lib/types"
-import { TutorProvider } from "./use-tutor"
 
 interface AuthContextType {
   user: FirebaseUser | null

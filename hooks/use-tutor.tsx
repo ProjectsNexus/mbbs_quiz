@@ -8,7 +8,6 @@ import { db } from "@/lib/firebase"
 import type { Student, Quiz, QuizAssignment, StudentPerformance, Notification } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { FirebaseService } from "@/lib/firebase-service"
-import { log } from "console"
 
 interface TutorContextType {
   students: Student[]

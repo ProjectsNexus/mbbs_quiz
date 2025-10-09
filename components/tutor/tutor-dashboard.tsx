@@ -34,7 +34,6 @@ import { Dialog, DialogContent, DialogOverlay } from "../ui/dialog"
 import { UserSettings } from "../setting/user-setting"
 import { StatusDialog } from "../ui/statusAlert"
 import { FirebaseService } from "@/lib/firebase-service"
-import { log } from "node:console"
 import { formatNotificationMessage, formatNotificationTime } from "@/lib/notification-formatter"
 import NotificationDrawer from "../ui/notificationdrawer"
 
@@ -45,7 +44,6 @@ export function TutorDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [error, setError] = useState<string | null>(null);
   const [isOpenSettingDialog, setIsOpenSettingDialog] = useState(false)
-  const [isNotificationsRead, setIsNotificationsRead] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<
     {

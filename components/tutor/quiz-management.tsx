@@ -1610,7 +1610,7 @@ export function QuizManagement() {
                   setSelectedQuizzes([])
                 }}
               >
-                Unpublished Selected
+                Unpublish Selected
               </Button>
               <Button
                 variant="outline"
