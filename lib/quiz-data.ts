@@ -20,8 +20,7 @@ export const MBBS_STRUCTURE = {
     blocks: ["G", "H", "I"],
     subjects: {
       G: [],
-      H: [],
-      I: [],
+      H: [ "Minors","Pathology", "Pathology (Skin Pathology)", " Pathology (Tissue tumors)", "Pathology (Bone Disorders)", "Pharmacology", "Pathology (Immunology)", "Forensic Medicine", "Community Medicine"],      I: [],
     },
   },
   "4th Year": {
