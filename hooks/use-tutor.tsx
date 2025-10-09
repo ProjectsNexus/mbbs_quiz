@@ -30,6 +30,7 @@ interface TutorContextType {
   bulkUpdatedQuiz: (quizId: string, update: Partial<Quiz>) => Promise<void>
   deleteQuiz: (quizId: string) => Promise<void>
   publishQuiz: (quizId: string) => Promise<void>
+  DraftQuiz: (quizId: string) => Promise<void>
 
   // Assignment Management
   assignQuiz: (assignment: Omit<QuizAssignment, "id">) => Promise<void>
@@ -66,7 +67,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     const unsubscribes: (() => void)[] = []
 
     const loadingTimeout = setTimeout(() => {
-      console.log("Tutor dashboard loading timeout - setting loading to false")
+      //console.log("Tutor dashboard loading timeout - setting loading to false")
       setLoading(false)
     }, 5000)
 
@@ -78,7 +79,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const studentsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Student)
           setStudents(studentsData)
-          console.log(`Loaded ${studentsData.length} students`)
+          //console.log(`Loaded ${studentsData.length} students`)
         },
         (error) => {
           console.error("Error loading students:", error)
@@ -94,7 +95,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const quizzesData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Quiz)
           setQuizzes(quizzesData)
-          console.log(`Loaded ${quizzesData.length} quizzes`)
+          //console.log(`Loaded ${quizzesData.length} quizzes`)
         },
         (error) => {
           console.error("Error loading quizzes:", error)
@@ -110,7 +111,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const assignmentsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as QuizAssignment)
           setAssignments(assignmentsData)
-          console.log(`Loaded ${assignmentsData.length} assignments`)
+          //console.log(`Loaded ${assignmentsData.length} assignments`)
         },
         (error) => {
           console.error("Error loading assignments:", error)
@@ -126,7 +127,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const performancesData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as StudentPerformance)
           setPerformances(performancesData)
-          console.log(`Loaded ${performancesData.length} performances`)
+          //console.log(`Loaded ${performancesData.length} performances`)
         },
         (error) => {
           console.error("Error loading performances:", error)
@@ -166,9 +167,8 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     const sudentdoc = await addDoc(collection(db, "students"), student)
 
     const studentId = (sudentdoc).id;
-    console.log(` Creating user account for student: ${student.email} with ID: ${studentId}`)
+    // //console.log(` Creating user account for student: ${student.email} with ID: ${studentId}`)
     
-    // await signUp(student.email, 'Sudent@' + student.year, student.name, "student", "tutor" , student.year  );}
     await createStudentByTutor(student.email, 'Sudent@' + student.year, student.name, student.year, studentId )
   }    
 
@@ -185,13 +185,13 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
 
       const studentData = studentSnap.data()
       const userId = studentData.userID
-      console.log(` Found linked userID: ${userId}`)
+      //console.log(` Found linked userID: ${userId}`)
 
       if (userId != undefined) {
         await deleteUserAccount(userId);
         await FirebaseService.deleteUserData(userId);
       }
-      console.log(userId + ' Delete User and there data')
+      //console.log(userId + ' Delete User and there data')
       await deleteDoc(doc(db, "students", studentId))
     } catch (error) {
       console.error(" Error removing student:", error)
@@ -235,7 +235,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
         })
   
         await batch.commit()
-        console.log(`✅ Bulk updated ${quizIds.length} quizzes.`)
+        //console.log(`✅ Bulk updated ${quizIds.length} quizzes.`)
       } catch (error) {
         console.error("Error bulk updating quizzes:", error)
         throw error
@@ -249,6 +249,10 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
 
   const publishQuiz = async (quizId: string) => {
     await updateDoc(doc(db, "quizzes", quizId), { isPublished: true })
+  }
+
+  const DraftQuiz = async (quizId: string) => {
+    await updateDoc(doc(db, "quizzes", quizId), { isPublished: false })
   }
 
   // Assignment Management Functions
@@ -283,7 +287,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
       // .map((perf) => students.find((student) => student.id === perf.studentId)!)
       .filter(Boolean)
 
-      console.log(topPerformers);
+      //console.log(topPerformers);
       
 
     return {
@@ -320,6 +324,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     bulkUpdatedQuiz,
     deleteQuiz,
     publishQuiz,
+    DraftQuiz,
     assignQuiz,
     updateAssignment,
     getStudentPerformance,
