@@ -30,8 +30,8 @@ export const MBBS_STRUCTURE = {
       J: [],
       K: [],
       L: [],
-      M1: [],
-      M2: [],
+      M1: ['ENT'],
+      M2: ['Eye'],
     },
   },
   "Final Year": {
