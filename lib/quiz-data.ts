@@ -29,7 +29,7 @@ export const MBBS_STRUCTURE = {
     subjects: {
       J: [],
       K: [],
-      L: [],
+      L: ['Pathology', 'Pharmacology', 'Gynaecology', 'Midicine', 'Surgery', 'Family Medicine', 'Community Medicine', 'Pediatrics'],
       M1: ['ENT'],
       M2: ['Eye'],
     },
