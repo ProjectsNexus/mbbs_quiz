@@ -168,7 +168,7 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     const studentId = (sudentdoc).id;
     // //console.log(` Creating user account for student: ${student.email} with ID: ${studentId}`)
     
-    await createStudentByTutor(student.email, 'Sudent@' + student.year, student.name, student.year, studentId )
+    await createStudentByTutor(student.email, '12345', student.name, student.year, studentId )
   }    
 
   const removeStudent = async (studentId: string) => {
@@ -342,3 +342,4 @@ export function useTutor() {
   }
   return context
 }
+
