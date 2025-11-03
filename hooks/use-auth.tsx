@@ -15,6 +15,7 @@ import {
 import { addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
 import { auth, db, secondaryAuth, secondaryDb } from "@/lib/firebase"
 import type { User } from "@/lib/types"
+import { is } from "date-fns/locale"
 
 interface AuthContextType {
   user: FirebaseUser | null
@@ -166,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password
       );
 
+      
       const userProfile = {
         id: userCredential.user.uid,
         email,
