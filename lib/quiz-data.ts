@@ -1,4 +1,5 @@
 // MBBS Course Structure based on provided requirements
+<<<<<<< HEAD
 // export const MBBS_STRUCTURE = {
 //   "1st Year": {
 //     blocks: ["A", "B", "C"],
@@ -44,10 +45,13 @@
 //     },
 //   },
 // }
+=======
+>>>>>>> 1f95b045438dd1252440c33226b06340020383ef
 export const MBBS_STRUCTURE = {
   "1st Year": {
     blocks: ["A", "B", "C"],
     subjects: {
+<<<<<<< HEAD
       A: [
         "Anatomy",
         "Histology",
@@ -82,11 +86,17 @@ export const MBBS_STRUCTURE = {
         "Pharmacology",
         "Forensic Medicine"
       ],
+=======
+      A: [],
+      B: [],
+      C: [],
+>>>>>>> 1f95b045438dd1252440c33226b06340020383ef
     },
   },
   "2nd Year": {
     blocks: ["D", "E", "F"],
     subjects: {
+<<<<<<< HEAD
       D: [
         "Anatomy",
         "Histology",
@@ -128,11 +138,17 @@ export const MBBS_STRUCTURE = {
         "Forensic Medicine",
         "Medicine"
       ],
+=======
+      D: [],
+      E: ["Minor Subjects", "Embryology", "Histology", "Anatomy", "Biochemistry", "Physiology"],
+      F: [,],
+>>>>>>> 1f95b045438dd1252440c33226b06340020383ef
     },
   },
   "3rd Year": {
     blocks: ["G", "H", "I"],
     subjects: {
+<<<<<<< HEAD
       G: [
         "Pathology",
         "Pharmacology",
@@ -173,11 +189,17 @@ export const MBBS_STRUCTURE = {
         "Biochemistry",
         "ENT"
       ],
+=======
+      G: [],
+      H: ["Minors","Pathology", "Pathology (Skin Pathology)", " Pathology (Tissue tumors)", "Pathology (Bone Disorders)", "Pharmacology", "Pathology (Immunology)", "Forensic Medicine", "Community Medicine"],
+      I: [],
+>>>>>>> 1f95b045438dd1252440c33226b06340020383ef
     },
   },
   "4th Year": {
     blocks: ["J", "K", "L", "M1", "M2"],
     subjects: {
+<<<<<<< HEAD
       J: [
         "Pathology",
         "Pharmacology",
@@ -213,11 +235,19 @@ export const MBBS_STRUCTURE = {
       ],
       M1: ["Ear", "Nose", "Throat"],
       M2: ["Eye"],
+=======
+      J: [],
+      K: [],
+      L: ['Pathology', 'Pharmacology', 'Gynaecology', 'Midicine', 'Surgery', 'Family Medicine', 'Community Medicine', 'Pediatrics'],
+      M1: ['ENT'],
+      M2: ['Eye'],
+>>>>>>> 1f95b045438dd1252440c33226b06340020383ef
     },
   },
   "Final Year": {
     blocks: ["N", "O", "P", "Q"],
     subjects: {
+<<<<<<< HEAD
       N: [
         "Medicine",
         "Pediatrics",
@@ -255,6 +285,15 @@ export const MBBS_STRUCTURE = {
     },
   },
 };
+=======
+      N: [],
+      O: [],
+      P: [],
+      Q: [],
+    },
+  },
+}
+>>>>>>> 1f95b045438dd1252440c33226b06340020383ef
 
 
 export interface Question {

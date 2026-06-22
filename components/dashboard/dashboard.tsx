@@ -223,7 +223,11 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
 
       {/* Main Content */}
 
+<<<<<<< HEAD
       <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)}
+=======
+      <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)} onClose={() => setIsOpen(false)}
+>>>>>>> 1f95b045438dd1252440c33226b06340020383ef
         onMarkAsRead={handleMarkAsRead}/>
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Welcome Section */}
