@@ -10,7 +10,7 @@ import { TutorProvider } from "@/hooks/use-tutor"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "SilvRx - Medical Education Platform",
+  title: "ProffAID - Medical Education Platform",
   description: "Comprehensive MBBS quiz application for medical students",
   generator: "https://muhammadsaif.is-great.net/",
 }
