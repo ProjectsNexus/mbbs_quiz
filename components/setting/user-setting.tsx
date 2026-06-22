@@ -210,7 +210,6 @@ export function UserSettings() {
               onCheckedChange={(checked) => setSettings({ ...settings, notifications: checked })}
             />
           </div>
-<<<<<<< HEAD
           {user?.email !== 'tutor@demo.com' && (
             <div className="flex items-center justify-between">
               <div>
@@ -224,24 +223,10 @@ export function UserSettings() {
               />
             </div>
           )}
-=======
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="emailUpdates">Email Updates</Label>
-              <p className="text-sm text-muted-foreground">Receive email updates about your progress</p>
-            </div>
-            <Switch
-              id="emailUpdates"
-              checked={settings.emailUpdates}
-              onCheckedChange={(checked) => setSettings({ ...settings, emailUpdates: checked })}
-            />
-          </div>
->>>>>>> 1f95b045438dd1252440c33226b06340020383ef
         </CardContent>
       </Card>
 
       {/* Privacy & Security */}
-<<<<<<< HEAD
       {user?.email !== 'tutor@demo.com' && (
         <Card>
           <CardHeader>
@@ -317,81 +302,6 @@ export function UserSettings() {
           </CardContent>
         </Card>
       )}
-=======
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Privacy & Security
-          </CardTitle>
-          <CardDescription>Manage your account security and data</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="autoSave">Auto-save Progress</Label>
-              <p className="text-sm text-muted-foreground">Automatically save your quiz progress</p>
-            </div>
-            <Switch
-              id="autoSave"
-              checked={settings.autoSave}
-              onCheckedChange={(checked) => setSettings({ ...settings, autoSave: checked })}
-            />
-          </div>
-
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-destructive">Danger Zone</h4>
-                <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
-              </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Account
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                      Delete Account
-                    </AlertDialogTitle>
-                    <AlertDialogDescription className="space-y-2">
-                      <p>
-                        This action cannot be undone. This will permanently delete your account and remove all your data
-                        from our servers, including:
-                      </p>
-                      <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>Your profile and account information</li>
-                        <li>All quiz results and performance history</li>
-                        <li>Your settings and preferences</li>
-                        <li>Any quizzes you created (if you're a tutor)</li>
-                        <li>All notifications and assignments</li>
-                      </ul>
-                      <p className="font-medium text-destructive">
-                        Are you absolutely sure you want to delete your account?
-                      </p>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteAccount}
-                      disabled={deleteLoading}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      {deleteLoading ? "Deleting..." : "Yes, delete my account"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
->>>>>>> 1f95b045438dd1252440c33226b06340020383ef
 
       <div className="flex justify-end">
         <Button onClick={handleSaveSettings} disabled={loading}>

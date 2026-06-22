@@ -168,10 +168,10 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 p-2 rounded-lg">
               {/* <GraduationCap className="h-6 w-6 text-primary" /> */}
-              <Logo size={'md'} src="/logo.png" alt="ProffAID Logo" className="h-12 w-12 text-primary" />
+              <Logo size={'md'} src="/logo.png" alt="SilvRx Logo" className="h-12 w-12 text-primary" />
             </div>
             <div>
-              <LogoTitle className="text-3xl">ProffAID</LogoTitle>
+              <LogoTitle className="text-3xl">SilvRx</LogoTitle>
               <p className="text-sm text-muted-foreground">Medical Education Platform</p>
             </div>
           </div>
@@ -223,8 +223,8 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
 
       {/* Main Content */}
 
-      <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)} />
-
+      <NotificationDrawer notifications={notifications} isOpen={isOpen} onClose={() => setIsOpen(false)}
+        onMarkAsRead={handleMarkAsRead}/>
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Welcome Section */}
         <div className="text-center space-y-4">

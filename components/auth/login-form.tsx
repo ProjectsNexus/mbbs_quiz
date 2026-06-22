@@ -34,11 +34,8 @@ export function LoginForm({ onToggleMode }: LoginFormProps) {
       await signIn(email, password)
     } catch (error: any) {
       setError(getFirebaseErrorMessage((error as any).code))
-<<<<<<< HEAD
       console.log(error);
       
-=======
->>>>>>> 1f95b045438dd1252440c33226b06340020383ef
     } finally {
       setLoading(false)
     }
