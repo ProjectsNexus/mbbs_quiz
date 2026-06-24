@@ -7,11 +7,12 @@ import { Dashboard } from "@/components/dashboard/dashboard"
 import { QuizSelectionWizard, type QuizConfig } from "@/components/quiz/quiz-selection-wizard"
 import { QuizInterface, type QuizResults } from "@/components/quiz/quiz-interface"
 import { QuizResults as QuizResultsComponent } from "@/components/quiz/quiz-results"
+import { NotesSelectionWizard } from "@/components/notes/notes-selection-wizard"
 import { TutorProvider } from "@/hooks/use-tutor"
 import { TutorDashboard } from "@/components/tutor/tutor-dashboard"
 import { UserSettings } from "@/components/setting/user-setting"
 
-type AppState = "dashboard" | "quiz-selection" | "quiz-active" | "quiz-results" 
+type AppState = "dashboard" | "quiz-selection" | "quiz-active" | "quiz-results" | "notes"
 export default function Home() {
   const { user, userProfile, loading, isTutor } = useAuth()
   const [appState, setAppState] = useState<AppState>("dashboard")
@@ -84,7 +85,18 @@ export default function Home() {
     case "dashboard":
       return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-          <Dashboard onStartQuiz={handleStartQuizSelection} onOpenSettings={() => setAppState("user-settings")} />
+          <Dashboard
+            onStartQuiz={handleStartQuizSelection}
+            onOpenSettings={() => setAppState("user-settings")}
+            onOpenNotes={() => setAppState("notes")}
+          />
+        </div>
+      )
+
+    case "notes":
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+          <NotesSelectionWizard onBack={handleBackToDashboard} />
         </div>
       )
 

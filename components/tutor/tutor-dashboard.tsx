@@ -30,6 +30,7 @@ import { StudentManagement } from "./student-management"
 import { QuizManagement } from "./quiz-management"
 import { PerformanceAnalytics } from "./performance-analytics"
 import { NotificationCenter } from "./notification-center"
+import { NotesManagement } from "./notes-management"
 import { Logo, LogoTitle } from "../ui/logo"
 import { Dialog, DialogContent, DialogOverlay } from "../ui/dialog"
 import { UserSettings } from "../setting/user-setting"
@@ -274,7 +275,7 @@ export function TutorDashboard() {
 
       <div className="max-w-7xl mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-6 bg-muted/50">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Overview
@@ -286,6 +287,10 @@ export function TutorDashboard() {
             <TabsTrigger value="quizzes" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Quizzes
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Notes
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -468,6 +473,10 @@ export function TutorDashboard() {
 
           <TabsContent value="quizzes">
             <QuizManagement />
+          </TabsContent>
+
+          <TabsContent value="notes">
+            <NotesManagement />
           </TabsContent>
 
           <TabsContent value="analytics">

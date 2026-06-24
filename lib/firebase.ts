@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app"
 import { getFirestore } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
+import { getStorage } from "firebase/storage"
 
 
 const firebaseConfig = {
@@ -12,9 +13,11 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
+console.log("Checking API Key:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
 export const auth = getAuth(app)
+export const storage = getStorage(app)
 export const secondaryAuth = getAuth(initializeApp(firebaseConfig, "Secondary"))  // Secondary app for admin tasks
 export const secondaryDb = getFirestore(initializeApp(firebaseConfig, "Secondary"))
 export default app

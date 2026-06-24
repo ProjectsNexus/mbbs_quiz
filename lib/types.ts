@@ -93,3 +93,20 @@ export interface Notification {
   sentAt: Date
   isRead: boolean
 }
+
+export interface Note {
+  id: string
+  title: string
+  description?: string
+  year: string
+  block: string
+  subject: string
+  topic: string
+  fileName: string
+  fileUrl: string
+  filePath: string // storage path, needed for deletion
+  fileSize: number
+  uploadedBy: string
+  uploadedByName?: string
+  createdAt: Date
+}

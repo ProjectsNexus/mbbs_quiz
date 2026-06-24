@@ -35,9 +35,11 @@ import { formatNotificationMessage, formatNotificationTime } from "@/lib/notific
 
 interface DashboardProps {
   onStartQuiz: () => void
+  onOpenSettings?: () => void
+  onOpenNotes: () => void
 }
 
-export function Dashboard({ onStartQuiz }: DashboardProps) {
+export function Dashboard({ onStartQuiz, onOpenNotes }: DashboardProps) {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const [isOpenSettingDialog, setIsOpenSettingDialog] = useState(false)
@@ -265,14 +267,14 @@ export function Dashboard({ onStartQuiz }: DashboardProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                Study Resources
+                Study Notes
               </CardTitle>
-              <CardDescription>Access study materials and reference guides</CardDescription>
+              <CardDescription>Browse tutor-uploaded notes by year, block and subject</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full bg-transparent" size="lg" disabled>
+              <Button onClick={onOpenNotes} variant="outline" className="w-full bg-transparent" size="lg">
                 <BookOpen className="mr-2 h-4 w-4" />
-                Coming Soon
+                View Notes
               </Button>
             </CardContent>
           </Card>

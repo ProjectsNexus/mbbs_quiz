@@ -14,9 +14,15 @@ import {
   deleteDoc,
   writeBatch,
 } from "firebase/firestore"
-import { auth, db } from "./firebase"
+import {
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage"
+import { auth, db, storage } from "./firebase"
 import { MBBS_STRUCTURE, type Question, type QuizSession } from "./quiz-data"
-import type { Student, Quiz, QuizAssignment, StudentPerformance, Notification } from "./types"
+import type { Student, Quiz, QuizAssignment, StudentPerformance, Notification, Note } from "./types"
 
 export class FirebaseService {
    // Get questions for a specific quiz configuration
@@ -721,6 +727,173 @@ async bulkUpdateQuizzesSelection ( quizIds: string[], updates: { year?: string; 
       return true
     } catch (error) {
       console.error(`[Error deleting user data for ${userId}:`, error)
+      return false
+    }
+  }
+
+  // ===================== NOTES (Tutor uploads / Student view) =====================
+  // Notes follow the same block structure as quizzes:
+  // /MBBS/{year}/{block}/{subject}/{topic}/{note files}
+
+  // Tutor: upload a PDF note. File goes to Storage, metadata goes to Firestore "notes" collection.
+  static async uploadNote(
+    file: File,
+    meta: {
+      title: string
+      description?: string
+      year: string
+      block: string
+      subject: string
+      topic: string
+      uploadedBy: string
+      uploadedByName?: string
+    }
+  ): Promise<string | null> {
+    try {
+      const safeFileName = `${Date.now()}_${file.name}`
+      const filePath = `notes/${meta.year}/${meta.block}/${meta.subject}/${meta.topic}/${safeFileName}`
+      const fileRef = storageRef(storage, filePath)
+
+      await uploadBytes(fileRef, file)
+      const fileUrl = await getDownloadURL(fileRef)
+
+      const docRef = await addDoc(collection(db, "notes"), {
+        title: meta.title,
+        description: meta.description || "",
+        year: meta.year,
+        block: meta.block,
+        subject: meta.subject,
+        topic: meta.topic,
+        fileName: file.name,
+        fileUrl,
+        filePath,
+        fileSize: file.size,
+        uploadedBy: meta.uploadedBy,
+        uploadedByName: meta.uploadedByName || "",
+        createdAt: serverTimestamp(),
+      })
+
+      return docRef.id
+    } catch (error) {
+      console.error("Error uploading note:", error)
+      return null
+    }
+  }
+
+  // Student: get available note topics for a year/block/subject (mirrors getTestTopics)
+  static async getNoteTopics(
+    year: string,
+    block: string,
+    subject: string
+  ): Promise<Array<{ topic: string; NumberNotes: number }>> {
+    try {
+      const ref = collection(db, "notes")
+      const q = query(
+        ref,
+        where("year", "==", year),
+        where("block", "==", block),
+        where("subject", "==", subject)
+      )
+
+      const snapshot = await getDocs(q)
+      if (snapshot.empty) return []
+
+      const counts: Record<string, number> = {}
+      snapshot.docs.forEach((doc) => {
+        const topic = doc.data().topic
+        counts[topic] = (counts[topic] || 0) + 1
+      })
+
+      return Object.entries(counts).map(([topic, NumberNotes]) => ({ topic, NumberNotes }))
+    } catch (error) {
+      console.error("Error fetching note topics:", error)
+      return []
+    }
+  }
+
+  // Student: get notes (files) for a specific year/block/subject/topic
+  static async getNotes(
+    year: string,
+    block: string,
+    subject: string,
+    topic: string
+  ): Promise<Note[]> {
+    try {
+      const ref = collection(db, "notes")
+      const q = query(
+        ref,
+        where("year", "==", year),
+        where("block", "==", block),
+        where("subject", "==", subject),
+        where("topic", "==", topic)
+      )
+
+      const snapshot = await getDocs(q)
+      return snapshot.docs.map((doc) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          title: data.title,
+          description: data.description,
+          year: data.year,
+          block: data.block,
+          subject: data.subject,
+          topic: data.topic,
+          fileName: data.fileName,
+          fileUrl: data.fileUrl,
+          filePath: data.filePath,
+          fileSize: data.fileSize,
+          uploadedBy: data.uploadedBy,
+          uploadedByName: data.uploadedByName,
+          createdAt: data.createdAt?.toDate?.() || new Date(),
+        } as Note
+      })
+    } catch (error) {
+      console.error("Error fetching notes:", error)
+      return []
+    }
+  }
+
+  // Tutor: get all notes they uploaded (for management screen)
+  static async getNotesByTutor(tutorId: string): Promise<Note[]> {
+    try {
+      const ref = collection(db, "notes")
+      const q = query(ref, where("uploadedBy", "==", tutorId))
+      const snapshot = await getDocs(q)
+
+      return snapshot.docs.map((doc) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          title: data.title,
+          description: data.description,
+          year: data.year,
+          block: data.block,
+          subject: data.subject,
+          topic: data.topic,
+          fileName: data.fileName,
+          fileUrl: data.fileUrl + '#toolbar=0&navpanes=0&view=FitH',
+          filePath: data.filePath,
+          fileSize: data.fileSize,
+          uploadedBy: data.uploadedBy,
+          uploadedByName: data.uploadedByName,
+          createdAt: data.createdAt?.toDate?.() || new Date(),
+        } as Note
+      })
+    } catch (error) {
+      console.error("Error fetching tutor notes:", error)
+      return []
+    }
+  }
+
+  // Tutor: delete a note (removes both the Storage file and Firestore metadata)
+  static async deleteNote(noteId: string, filePath: string): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, "notes", noteId))
+      await deleteObject(storageRef(storage, filePath))
+      return true
+    } catch (error) {
+      console.error("Error deleting note:", error)
       return false
     }
   }
